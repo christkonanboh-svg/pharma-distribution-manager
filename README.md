@@ -4,8 +4,6 @@ Gestion de la distribution pharmaceutique — projet **DPCI Atelier GL 19**.
 
 ## 📊 Présentation du projet
 
-Support de présentation PowerPoint du projet (14 slides) :
-
 👉 [DPCI_Atelier_GL_19.pptx](./DPCI_Atelier_GL_19.pptx)
 
 [Afficher la présentation en ligne](https://view.officeapps.live.com/op/view.aspx?src=https://github.com/christkonanboh-svg/pharma-distribution-manager/raw/main/DPCI_Atelier_GL_19.pptx)
@@ -31,13 +29,11 @@ Support de présentation PowerPoint du projet (14 slides) :
 
 ## 📄 Cahier des charges
 
-Le cahier des charges est disponible sur la branche **`cahier-des-charges`** :
-
-👉 [Cahier_des_charges_DPCI_Atelier_GL19.docx](https://github.com/christkonanboh-svg/pharma-distribution-manager/blob/cahier-des-charges/Cahier_des_charges_DPCI_Atelier_GL19.docx)
+👉 [Cahier_des_charges_DPCI_Atelier_GL19.docx](./Cahier_des_charges_DPCI_Atelier_GL19.docx)
 
 ## 📂 Contenu du dépôt
 
-| Fichier | Branche | Description |
-|---|---|---|
-| `DPCI_Atelier_GL_19.pptx` | `main` | Présentation / diaporama du projet |
-| `Cahier_des_charges_DPCI_Atelier_GL19.docx` | `cahier-des-charges` | Cahier des charges du projet |
+| Fichier | Description |
+|---|---|
+| `DPCI_Atelier_GL_19.pptx` | Présentation / diaporama du projet |
+| `Cahier_des_charges_DPCI_Atelier_GL19.docx` | Cahier des charges du projet |
