@@ -27,13 +27,8 @@ Gestion de la distribution pharmaceutique — projet **DPCI Atelier GL 19**.
 | 13 | Planning : 13 semaines, 6 phases |
 | 14 | Conclusion et perspectives |
 
-## 📄 Cahier des charges
-
-👉 [Cahier_des_charges_DPCI_Atelier_GL19.docx](./Cahier_des_charges_DPCI_Atelier_GL19.docx)
-
 ## 📂 Contenu du dépôt
 
 | Fichier | Description |
 |---|---|
 | `DPCI_Atelier_GL_19.pptx` | Présentation / diaporama du projet |
-| `Cahier_des_charges_DPCI_Atelier_GL19.docx` | Cahier des charges du projet |
