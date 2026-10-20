@@ -4,6 +4,8 @@ Gestion de la distribution pharmaceutique — projet **DPCI Atelier GL 19**.
 
 ## 📊 Présentation du projet
 
+👉 [DPCI_Atelier_GL_19.pptx](./DPCI_Atelier_GL_19.pptx)
+
 | # | Slide |
 |---|---|
 | 1 | Digitalisation de la gestion pharmaceutique — DPCI, sujet n°19 |
