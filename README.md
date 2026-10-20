@@ -4,7 +4,7 @@ Gestion de la distribution pharmaceutique — projet **DPCI Atelier GL 19**.
 
 ## 📊 Présentation du projet
 
-👉 [DPCI_Atelier_GL_19.pptx](./DPCI_Atelier_GL_19.pptx)
+👉 [DPCI_Atelier_GL_19.pptx](https://github.com/christkonanboh-svg/pharma-distribution-manager/releases/download/presentation-dpci-gl19/DPCI_Atelier_GL_19.pptx)
 
 | # | Slide |
 |---|---|
