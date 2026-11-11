@@ -1,0 +1,135 @@
+{% load static %}
+<div
+  x-show="sidebarOpen"
+  x-transition.opacity
+  class="fixed inset-0 z-40 bg-navy-950/60 backdrop-blur-sm lg:hidden"
+  @click="sidebarOpen = false"
+  x-cloak
+></div>
+
+<aside
+  class="fixed inset-y-0 left-0 z-50 flex w-[272px] -translate-x-full flex-col overflow-hidden border-r border-white/5 bg-navy-950 text-slate-300 shadow-2xl transition-transform duration-300 ease-out lg:translate-x-0"
+  :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+>
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <div class="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-brand-500/15 blur-3xl"></div>
+    <div class="absolute -bottom-32 -right-20 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl"></div>
+    <div class="absolute inset-0 bg-grid-dark opacity-70"></div>
+  </div>
+
+  <div class="relative flex min-h-0 flex-1 flex-col">
+    <div class="flex items-center justify-between px-5 pb-5 pt-6">
+      <a href="{% url 'dashboard' %}" class="group flex items-center gap-3">
+        <span class="relative grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 shadow-glow transition duration-300 group-hover:scale-105">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          <span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-navy-950 bg-emerald-400"></span>
+        </span>
+        <span>
+          <span class="flex items-baseline text-lg font-extrabold tracking-tight text-white">DPCI<span class="text-brand-400">.</span></span>
+          <span class="block text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-500">Plateforme pharma</span>
+        </span>
+      </a>
+      <button type="button" class="btn-icon border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white lg:hidden" @click="sidebarOpen = false" aria-label="Fermer le menu">
+        <svg class="icon-sm"><use href="#i-x"></use></svg>
+      </button>
+    </div>
+
+    <nav class="no-scrollbar flex-1 space-y-6 overflow-y-auto px-3 pb-6">
+      <div>
+        <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Pilotage</p>
+        <div class="space-y-1">
+          <a href="{% url 'dashboard' %}" class="nav-item {% if active_nav == 'dashboard' %}nav-item-active{% endif %}" @click="sidebarOpen = false">
+            <svg class="icon"><use href="#i-dashboard"></use></svg>
+            <span class="flex-1">Tableau de bord</span>
+          </a>
+          <a href="{% url 'commandes' %}" class="nav-item {% if active_nav == 'commandes' %}nav-item-active{% endif %}" @click="sidebarOpen = false">
+            <svg class="icon"><use href="#i-cart"></use></svg>
+            <span class="flex-1">Commandes</span>
+            <span class="rounded-md bg-brand-500/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-300">12</span>
+          </a>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-clipboard"></use></svg>
+            <span class="flex-1">Préparation</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-truck"></use></svg>
+            <span class="flex-1">Livraisons</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Stock & traçabilité</p>
+        <div class="space-y-1">
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-box"></use></svg>
+            <span class="flex-1">Stock & lots</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-package-check"></use></svg>
+            <span class="flex-1">Réception</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-scan"></use></svg>
+            <span class="flex-1">Traçabilité</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-shield"></use></svg>
+            <span class="flex-1">Rappels de lot</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Organisation</p>
+        <div class="space-y-1">
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-pill"></use></svg>
+            <span class="flex-1">Référentiels</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-users"></use></svg>
+            <span class="flex-1">Utilisateurs</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+          <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible">
+            <svg class="icon"><use href="#i-chart"></use></svg>
+            <span class="flex-1">Rapports</span>
+            <span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Bientôt</span>
+          </span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="relative border-t border-white/5 p-3">
+      <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-300">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
+          </span>
+          Mode démonstration
+        </div>
+        <div class="mt-3 flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-300 to-brand-600 text-xs font-bold text-navy-950 shadow-lg shadow-brand-900/30">{{ user.initials }}</div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold text-white">{{ user.name }}</p>
+            <p class="truncate text-[11px] text-slate-500">{{ user.role }}</p>
+          </div>
+          <a href="{% url 'logout' %}" class="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-rose-500/10 hover:text-rose-300" title="Se déconnecter">
+            <svg class="icon-sm"><use href="#i-logout"></use></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>

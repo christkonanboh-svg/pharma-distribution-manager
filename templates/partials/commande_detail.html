@@ -1,0 +1,161 @@
+{% load dpci %}
+<div class="animate-fade-in">
+  <div class="border-b border-slate-100 bg-gradient-to-br from-slate-50 via-white to-brand-50/30 px-5 py-5 sm:px-6">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Référence commande</p>
+        <h2 class="mt-1 text-xl font-extrabold tracking-tight text-slate-900">{{ order.reference }}</h2>
+        <p class="mt-1 text-xs text-slate-500">Créée le {{ order.date }} à {{ order.time }}</p>
+      </div>
+      <span class="badge {{ order.status_meta.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>{{ order.status_meta.label }}</span>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      <span class="badge
+        {% if order.priority == 'Haute' %}bg-rose-50 text-rose-700 ring-rose-200/70
+        {% elif order.priority == 'Basse' %}bg-slate-100 text-slate-500 ring-slate-200
+        {% else %}bg-slate-100 text-slate-600 ring-slate-200{% endif %}">
+        Priorité {{ order.priority|lower }}
+      </span>
+      <span class="badge bg-white text-slate-600 ring-slate-200">
+        <svg class="icon-sm h-3.5 w-3.5"><use href="#i-file"></use></svg>
+        {{ order.lines }} lignes
+      </span>
+      <span class="badge bg-white text-slate-600 ring-slate-200">
+        <svg class="icon-sm h-3.5 w-3.5"><use href="#i-box"></use></svg>
+        {{ order.units }} unités
+      </span>
+    </div>
+  </div>
+
+  <div class="space-y-5 p-5 sm:p-6">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-2xl border border-slate-200/80 bg-white p-4">
+        <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-wallet"></use></svg>
+          Montant total
+        </div>
+        <p class="mt-2 text-lg font-extrabold tracking-tight text-slate-900 tabular">{{ order.amount|fcfa }}</p>
+        <p class="mt-0.5 text-[11px] text-slate-400">{{ order.payment }}</p>
+      </div>
+      <div class="rounded-2xl border border-slate-200/80 bg-white p-4">
+        <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-activity"></use></svg>
+          Avancement
+        </div>
+        <p class="mt-2 text-lg font-extrabold tracking-tight text-slate-900 tabular">{{ order.progress }}%</p>
+        <div class="progress-track mt-2"><div class="progress-fill" style="width: {{ order.progress }}%"></div></div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200/80 bg-white p-4">
+      <div class="flex items-center gap-3">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-100 to-brand-200 text-xs font-extrabold text-brand-800">{{ order.initials }}</span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-bold text-slate-900">{{ order.client }}</p>
+          <p class="text-[11px] text-slate-500">{{ order.client_type }} · {{ order.city }}</p>
+        </div>
+      </div>
+      <div class="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
+        <div class="flex items-start gap-2.5 text-xs text-slate-600">
+          <svg class="icon-sm mt-0.5 text-slate-400"><use href="#i-user"></use></svg>
+          <span>{{ order.contact }}</span>
+        </div>
+        <div class="flex items-start gap-2.5 text-xs text-slate-600">
+          <svg class="icon-sm mt-0.5 text-slate-400"><use href="#i-phone"></use></svg>
+          <span>{{ order.phone }}</span>
+        </div>
+        <div class="flex items-start gap-2.5 text-xs text-slate-600">
+          <svg class="icon-sm mt-0.5 text-slate-400"><use href="#i-map-pin"></use></svg>
+          <span>{{ order.address }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="text-sm font-extrabold tracking-tight text-slate-900">Produits commandés</h3>
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{{ order.products|length }}</span>
+      </div>
+      <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
+        {% for product in order.products %}
+          <div class="flex items-start gap-3 p-3.5">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
+              <svg class="icon-sm"><use href="#i-pill"></use></svg>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-slate-800">{{ product.name }}</p>
+              <p class="mt-0.5 text-[10px] text-slate-400">{{ product.form }}</p>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">Lot {{ product.lot }}</span>
+                <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700">Exp. {{ product.expiry }}</span>
+              </div>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-xs font-bold text-slate-800 tabular">{{ product.qty }} u.</p>
+              <p class="mt-0.5 text-[10px] text-slate-400 tabular">{% widthratio product.qty 1 product.price as line_total %}{{ line_total|fcfa }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200/80 bg-white p-4">
+      <h3 class="text-sm font-extrabold tracking-tight text-slate-900">Suivi de la commande</h3>
+      {% if order.status == 'annulee' %}
+        <div class="mt-3 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-800">
+          <svg class="icon-sm mt-0.5 text-rose-600"><use href="#i-x"></use></svg>
+          Cette commande a été annulée. Aucune préparation ni livraison ne sera effectuée.
+        </div>
+      {% else %}
+        <div class="mt-4 space-y-0">
+          <div class="relative flex gap-3 pb-5">
+            <span class="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px bg-emerald-200"></span>
+            <span class="relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"><svg class="h-3.5 w-3.5"><use href="#i-check"></use></svg></span>
+            <div class="pt-0.5"><p class="text-xs font-bold text-slate-800">Commande reçue</p><p class="mt-0.5 text-[10px] text-slate-400">{{ order.date }} · {{ order.time }}</p></div>
+          </div>
+          <div class="relative flex gap-3 pb-5">
+            <span class="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px {% if order.status == 'attente' %}bg-slate-200{% else %}bg-emerald-200{% endif %}"></span>
+            <span class="relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full {% if order.status == 'attente' %}bg-slate-100 text-slate-400 ring-4 ring-white{% else %}bg-emerald-500 text-white{% endif %}">
+              {% if order.status == 'attente' %}<svg class="h-3.5 w-3.5"><use href="#i-clock"></use></svg>{% else %}<svg class="h-3.5 w-3.5"><use href="#i-check"></use></svg>{% endif %}
+            </span>
+            <div class="pt-0.5"><p class="text-xs font-bold {% if order.status == 'attente' %}text-slate-500{% else %}text-slate-800{% endif %}">Validation commerciale</p><p class="mt-0.5 text-[10px] text-slate-400">{% if order.status == 'attente' %}En attente de validation{% else %}Validée par l'équipe commerciale{% endif %}</p></div>
+          </div>
+          <div class="relative flex gap-3 pb-5">
+            <span class="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px {% if order.status == 'prete' or order.status == 'expediee' or order.status == 'livree' %}bg-emerald-200{% else %}bg-slate-200{% endif %}"></span>
+            <span class="relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full
+              {% if order.status == 'preparation' %}bg-brand-500 text-white ring-4 ring-brand-100 animate-pulse-ring
+              {% elif order.status == 'prete' or order.status == 'expediee' or order.status == 'livree' %}bg-emerald-500 text-white
+              {% else %}bg-slate-100 text-slate-400{% endif %}">
+              <svg class="h-3.5 w-3.5"><use href="#i-clipboard"></use></svg>
+            </span>
+            <div class="pt-0.5"><p class="text-xs font-bold {% if order.status == 'preparation' %}text-brand-700{% else %}text-slate-800{% endif %}">Préparation FEFO</p><p class="mt-0.5 text-[10px] text-slate-400">{% if order.status == 'preparation' %}En cours · {{ order.progress }}%{% elif order.status == 'prete' or order.status == 'expediee' or order.status == 'livree' %}Terminée{% else %}À venir{% endif %}</p></div>
+          </div>
+          <div class="relative flex gap-3 pb-5">
+            <span class="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px {% if order.status == 'livree' %}bg-emerald-200{% else %}bg-slate-200{% endif %}"></span>
+            <span class="relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full {% if order.status == 'expediee' or order.status == 'livree' %}bg-emerald-500 text-white{% else %}bg-slate-100 text-slate-400{% endif %}">
+              <svg class="h-3.5 w-3.5"><use href="#i-truck"></use></svg>
+            </span>
+            <div class="pt-0.5"><p class="text-xs font-bold {% if order.status == 'expediee' or order.status == 'livree' %}text-slate-800{% else %}text-slate-500{% endif %}">Expédition</p><p class="mt-0.5 text-[10px] text-slate-400">{% if order.status == 'expediee' %}Colis en cours d'acheminement{% elif order.status == 'livree' %}Livraison effectuée{% else %}À venir{% endif %}</p></div>
+          </div>
+          <div class="relative flex gap-3">
+            <span class="relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full {% if order.status == 'livree' %}bg-emerald-500 text-white{% else %}bg-slate-100 text-slate-400{% endif %}">
+              <svg class="h-3.5 w-3.5"><use href="#i-check-circle"></use></svg>
+            </span>
+            <div class="pt-0.5"><p class="text-xs font-bold {% if order.status == 'livree' %}text-slate-800{% else %}text-slate-500{% endif %}">Livraison confirmée</p><p class="mt-0.5 text-[10px] text-slate-400">{% if order.status == 'livree' %}Réception validée par le client{% else %}À venir{% endif %}</p></div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="sticky bottom-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-6">
+    <button type="button" class="btn-secondary text-xs" @click="window.showToast('Bon de préparation envoyé à l\'impression (démo).')">
+      <svg class="icon-sm"><use href="#i-printer"></use></svg>
+      Imprimer
+    </button>
+    <button type="button" class="btn-primary text-xs" @click="window.showToast('Statut de la commande mis à jour (démo).'); drawer = false">
+      <svg class="icon-sm"><use href="#i-refresh"></use></svg>
+      Mettre à jour
+    </button>
+  </div>
+</div>

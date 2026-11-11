@@ -12,6 +12,47 @@ Application web de gestion des commandes, des lots, des dates de péremption, de
 | **Présentation** | [DPCI_Atelier_GL_19.pptx](https://github.com/christkonanboh-svg/pharma-distribution-manager/releases/download/presentation-dpci-gl19/DPCI_Atelier_GL_19.pptx) |
 | **Cahier des charges** | [Cahier_des_charges_DPCI_Atelier_GL19.docx](Cahier_des_charges_DPCI_Atelier_GL19.docx) |
 
+## Frontend
+
+Le socle frontend est implémenté avec **Django**, **Tailwind CSS**, **HTMX** et **Alpine.js**.
+
+### Écrans disponibles
+
+| Écran | Route | Contenu |
+|---|---|---|
+| Connexion | `/connexion/` | Formulaire, comptes de démonstration, mot de passe visible, état de chargement |
+| Tableau de bord | `/tableau-de-bord/` | KPI, graphique 7/30 jours, pipeline, alertes stock, commandes récentes, activité |
+| Commandes | `/commandes/` | Recherche instantanée, filtres, onglets de statut, fiche latérale HTMX, création simulée |
+
+### Comptes de démonstration
+
+| Identifiant | Mot de passe | Rôle |
+|---|---|---|
+| `a.konan` | `demo1234` | Responsable commerciale |
+| `p.koffi` | `demo1234` | Pharmacien responsable |
+| `m.diabate` | `demo1234` | Responsable magasin |
+
+### Lancer le frontend
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+npm install
+npm run build:css
+py -3.12 manage.py runserver
+```
+
+Ouvrir ensuite `http://127.0.0.1:8000/connexion/`.
+
+Pour développer le CSS en continu :
+
+```powershell
+npm run dev:css
+```
+
+> Le frontend utilise SQLite et des sessions signées pour la démonstration. Aucune donnée réelle n'est enregistrée. Les maquettes HTML ne sont toujours pas versionnées dans ce dépôt.
+
 ## Maquettes
 
 Les maquettes de l'application sont disponibles sur Figma :
@@ -141,6 +182,37 @@ Les 16 diagrammes sont versionnés sous forme d'images PNG dans le dossier [`dia
 pharma-distribution-manager/
 ├─ README.md
 ├─ Cahier_des_charges_DPCI_Atelier_GL19.docx
+├─ manage.py
+├─ requirements.txt
+├─ package.json
+├─ tailwind.config.js
+├─ config/
+│  ├─ settings.py
+│  ├─ urls.py
+│  ├─ wsgi.py
+│  └─ asgi.py
+├─ core/
+│  ├─ data.py
+│  ├─ urls.py
+│  ├─ views.py
+│  └─ templatetags/dpci.py
+├─ templates/
+│  ├─ base.html
+│  ├─ pages/
+│  │  ├─ login.html
+│  │  ├─ dashboard.html
+│  │  └─ commandes.html
+│  └─ partials/
+│     ├─ sidebar.html
+│     ├─ topbar.html
+│     ├─ commandes_table.html
+│     └─ commande_detail.html
+├─ static/
+│  ├─ src/input.css
+│  ├─ css/app.css
+│  ├─ js/app.js
+│  ├─ img/favicon.svg
+│  └─ vendor/
 └─ diagrammes-uml/
    ├─ 01_cas_utilisation.png
    ├─ 01b_cas_utilisation_commandes.png

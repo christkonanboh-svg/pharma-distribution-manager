@@ -1,0 +1,147 @@
+{% load dpci %}
+<div id="orders-table" class="card overflow-hidden animate-fade-in">
+  <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <div>
+      <div class="flex items-center gap-2">
+        <h2 class="text-base font-extrabold tracking-tight text-slate-900">Liste des commandes</h2>
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 tabular">{{ total_orders }}</span>
+      </div>
+      <p class="mt-0.5 text-xs text-slate-500">Montant cumulé : <span class="font-bold text-slate-700 tabular">{{ total_amount|fcfa }}</span></p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="hidden items-center gap-1.5 text-[11px] font-medium text-slate-400 sm:flex">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+        Synchronisé à l'instant
+      </span>
+      <button type="button" class="btn-secondary h-9 px-3 text-xs" @click="htmx.trigger($refs.filterForm, 'submit')">
+        <svg class="icon-sm"><use href="#i-refresh"></use></svg>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  {% if orders %}
+    <div class="overflow-x-auto scrollbar-thin">
+      <table class="w-full min-w-[1040px]">
+        <thead class="bg-slate-50/70">
+          <tr>
+            <th class="table-th">Commande</th>
+            <th class="table-th">Client</th>
+            <th class="table-th">Date</th>
+            <th class="table-th">Montant</th>
+            <th class="table-th">Priorité</th>
+            <th class="table-th">Statut</th>
+            <th class="table-th">Avancement</th>
+            <th class="table-th text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr class="table-row group">
+              <td class="table-td">
+                <div class="flex items-center gap-2.5">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-brand-50 group-hover:text-brand-700">
+                    <svg class="icon-sm"><use href="#i-file"></use></svg>
+                  </span>
+                  <div>
+                    <p class="font-bold text-slate-800">{{ order.reference }}</p>
+                    <p class="mt-0.5 text-[11px] text-slate-400">{{ order.lines }} lignes · {{ order.units }} unités</p>
+                  </div>
+                </div>
+              </td>
+              <td class="table-td">
+                <div class="flex items-center gap-2.5">
+                  <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">{{ order.initials }}</span>
+                  <div>
+                    <p class="max-w-[190px] truncate font-semibold text-slate-700">{{ order.client }}</p>
+                    <p class="text-[11px] text-slate-400">{{ order.client_type }} · {{ order.city }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="table-td">
+                <p class="font-semibold text-slate-600">{{ order.date }}</p>
+                <p class="mt-0.5 text-[11px] text-slate-400">{{ order.time }}</p>
+              </td>
+              <td class="table-td">
+                <p class="font-bold text-slate-800 tabular">{{ order.amount|fcfa }}</p>
+                <p class="mt-0.5 text-[11px] text-slate-400">{{ order.payment }}</p>
+              </td>
+              <td class="table-td">
+                <span class="badge
+                  {% if order.priority == 'Haute' %}bg-rose-50 text-rose-700 ring-rose-200/70
+                  {% elif order.priority == 'Basse' %}bg-slate-100 text-slate-500 ring-slate-200
+                  {% else %}bg-slate-100 text-slate-600 ring-slate-200{% endif %}">
+                  <span class="h-1.5 w-1.5 rounded-full
+                    {% if order.priority == 'Haute' %}bg-rose-500
+                    {% elif order.priority == 'Basse' %}bg-slate-400
+                    {% else %}bg-slate-500{% endif %}"></span>
+                  {{ order.priority }}
+                </span>
+              </td>
+              <td class="table-td">
+                <span class="badge {{ order.status_meta.badge }}">
+                  <span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>
+                  {{ order.status_meta.label }}
+                </span>
+              </td>
+              <td class="table-td">
+                <div class="flex w-28 items-center gap-2">
+                  <div class="progress-track flex-1"><div class="progress-fill" style="width: {{ order.progress }}%"></div></div>
+                  <span class="w-7 text-right text-[10px] font-bold text-slate-500 tabular">{{ order.progress }}%</span>
+                </div>
+              </td>
+              <td class="table-td text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-700"
+                    hx-get="{% url 'commande_detail' order.id %}"
+                    hx-target="#drawer-body"
+                    hx-swap="innerHTML"
+                    @click="drawer = true"
+                    aria-label="Voir {{ order.reference }}"
+                  >
+                    <svg class="icon-sm"><use href="#i-eye"></use></svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    @click="window.showToast('Actions rapides disponibles dans le prochain lot.')"
+                    aria-label="Plus d'actions"
+                  >
+                    <svg class="icon-sm"><use href="#i-more"></use></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <p class="text-[11px] font-medium text-slate-400">Affichage de <span class="font-bold text-slate-600">1</span> à <span class="font-bold text-slate-600">{{ total_orders }}</span> sur <span class="font-bold text-slate-600">{{ total_orders }}</span> commande{{ total_orders|pluralize }}</p>
+      <div class="flex items-center gap-1">
+        <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled aria-label="Page précédente">
+          <svg class="icon-sm"><use href="#i-arrow-left"></use></svg>
+        </button>
+        <span class="grid h-8 w-8 place-items-center rounded-lg bg-slate-900 text-xs font-bold text-white">1</span>
+        <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled aria-label="Page suivante">
+          <svg class="icon-sm"><use href="#i-chevron-right"></use></svg>
+        </button>
+      </div>
+    </div>
+  {% else %}
+    <div class="flex flex-col items-center justify-center px-6 py-20 text-center">
+      <span class="grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-slate-400">
+        <svg class="h-8 w-8"><use href="#i-search"></use></svg>
+      </span>
+      <h3 class="mt-4 text-base font-extrabold text-slate-900">Aucune commande trouvée</h3>
+      <p class="mt-1 max-w-sm text-sm leading-6 text-slate-500">Aucun résultat ne correspond à vos filtres. Essayez une autre recherche ou réinitialisez les filtres.</p>
+      <a href="{% url 'commandes' %}" class="btn-secondary mt-5 text-xs" hx-get="{% url 'commandes' %}" hx-target="#orders-table" hx-push-url="true" @click="status = ''">
+        <svg class="icon-sm"><use href="#i-refresh"></use></svg>
+        Réinitialiser les filtres
+      </a>
+    </div>
+  {% endif %}
+</div>

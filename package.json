@@ -1,0 +1,14 @@
+{
+  "name": "dpci-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Interface DPCI - Django, Tailwind, HTMX et Alpine.js",
+  "scripts": {
+    "dev:css": "tailwindcss -i ./static/src/input.css -o ./static/css/app.css --watch",
+    "build:css": "tailwindcss -i ./static/src/input.css -o ./static/css/app.css --minify",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.19"
+  }
+}

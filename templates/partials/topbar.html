@@ -1,0 +1,145 @@
+<header class="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
+  <div class="flex h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+    <button type="button" class="btn-icon lg:hidden" @click="sidebarOpen = true" aria-label="Ouvrir le menu">
+      <svg class="icon"><use href="#i-menu"></use></svg>
+    </button>
+
+    <div class="hidden min-w-0 flex-col xl:flex">
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <span>DPCI</span>
+        <svg class="icon-sm h-3 w-3"><use href="#i-chevron-right"></use></svg>
+        <span class="text-slate-600">{% if active_nav == 'commandes' %}Commandes{% else %}Tableau de bord{% endif %}</span>
+      </div>
+      <p class="mt-0.5 truncate text-sm font-bold text-slate-800">{% if active_nav == 'commandes' %}Gestion des commandes{% else %}Vue d'ensemble des opérations{% endif %}</p>
+    </div>
+
+    <form action="{% url 'commandes' %}" method="get" class="relative ml-auto hidden w-full max-w-md md:block">
+      <svg class="field-icon"><use href="#i-search"></use></svg>
+      <input
+        type="search"
+        name="q"
+        value="{{ query|default:'' }}"
+        class="field h-11 rounded-xl border-slate-200/80 bg-slate-50/80 pl-10 pr-16 text-sm focus:bg-white"
+        placeholder="Rechercher une commande, un client…"
+        aria-label="Recherche globale"
+        data-global-search
+      >
+      <span class="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 sm:flex">
+        <svg class="h-3 w-3"><use href="#i-command"></use></svg>
+        K
+      </span>
+    </form>
+
+    <div class="ml-auto flex items-center gap-2 md:ml-0">
+      <a href="{% url 'commandes' %}" class="btn-icon md:hidden" aria-label="Rechercher">
+        <svg class="icon"><use href="#i-search"></use></svg>
+      </a>
+
+      <div class="relative" x-data="{ open: false }">
+        <button type="button" class="btn-icon relative" @click="open = !open" :aria-expanded="open" aria-label="Notifications">
+          <svg class="icon"><use href="#i-bell"></use></svg>
+          <span class="absolute right-2 top-2 flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+          </span>
+        </button>
+        <div
+          x-show="open"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+          x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+          x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+          @click.outside="open = false"
+          class="absolute right-0 top-12 z-50 w-[min(92vw,360px)] origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lift"
+          x-cloak
+        >
+          <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <div>
+              <p class="text-sm font-bold text-slate-900">Notifications</p>
+              <p class="text-[11px] text-slate-500">3 alertes nécessitent votre attention</p>
+            </div>
+            <span class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 ring-1 ring-inset ring-rose-200">3</span>
+          </div>
+          <div class="divide-y divide-slate-100">
+            <a href="{% url 'commandes' %}?status=attente" class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+              <span class="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600">
+                <svg class="icon-sm"><use href="#i-clock"></use></svg>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold text-slate-800">2 commandes en attente</span>
+                <span class="mt-0.5 block text-xs leading-5 text-slate-500">À valider avant la préparation du jour.</span>
+              </span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+              <span class="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600">
+                <svg class="icon-sm"><use href="#i-alert"></use></svg>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold text-slate-800">Alerte stock critique</span>
+                <span class="mt-0.5 block text-xs leading-5 text-slate-500">Doliprane 500 mg sous le seuil minimal.</span>
+              </span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex gap-3 px-4 py-3 transition hover:bg-slate-50">
+              <span class="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-50 text-sky-600">
+                <svg class="icon-sm"><use href="#i-package-check"></use></svg>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold text-slate-800">Réception validée</span>
+                <span class="mt-0.5 block text-xs leading-5 text-slate-500">Le lot DOL-2609 est disponible à la vente.</span>
+              </span>
+            </a>
+          </div>
+          <a href="{% url 'dashboard' %}" class="block bg-slate-50 px-4 py-3 text-center text-xs font-bold text-brand-700 transition hover:bg-slate-100">Tout marquer comme lu</a>
+        </div>
+      </div>
+
+      <div class="hidden h-8 w-px bg-slate-200 sm:block"></div>
+
+      <div class="relative" x-data="{ open: false }">
+        <button type="button" class="flex items-center gap-2 rounded-xl p-1 pr-2 transition hover:bg-slate-100" @click="open = !open" :aria-expanded="open">
+          <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 text-[11px] font-bold text-white shadow-md shadow-brand-600/20">{{ user.initials }}</span>
+          <span class="hidden text-left sm:block">
+            <span class="block max-w-[140px] truncate text-xs font-bold text-slate-800">{{ user.name }}</span>
+            <span class="block max-w-[140px] truncate text-[10px] text-slate-500">{{ user.role }}</span>
+          </span>
+          <svg class="icon-sm hidden text-slate-400 sm:block"><use href="#i-chevron-down"></use></svg>
+        </button>
+        <div
+          x-show="open"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+          x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+          x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+          @click.outside="open = false"
+          class="absolute right-0 top-12 z-50 w-64 origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-lift"
+          x-cloak
+        >
+          <div class="border-b border-slate-100 px-3 py-3">
+            <p class="text-sm font-bold text-slate-900">{{ user.name }}</p>
+            <p class="truncate text-xs text-slate-500">{{ user.email }}</p>
+          </div>
+          <div class="py-1">
+            <span class="flex cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-400">
+              <svg class="icon-sm"><use href="#i-user"></use></svg>
+              Mon profil
+              <span class="ml-auto text-[9px] font-bold uppercase tracking-wide">Bientôt</span>
+            </span>
+            <span class="flex cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-400">
+              <svg class="icon-sm"><use href="#i-settings"></use></svg>
+              Paramètres
+              <span class="ml-auto text-[9px] font-bold uppercase tracking-wide">Bientôt</span>
+            </span>
+          </div>
+          <a href="{% url 'logout' %}" class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
+            <svg class="icon-sm"><use href="#i-logout"></use></svg>
+            Se déconnecter
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
