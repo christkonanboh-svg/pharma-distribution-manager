@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Réception de lot — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ conform: true }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <a href="{% url 'stock_lots' %}" class="transition hover:text-brand-700">Stock &amp; lots</a>
+        <svg class="icon-sm h-3 w-3"><use href="#i-chevron-right"></use></svg>
+        <span class="text-slate-600">Réception</span>
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Réception d'un lot</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Enregistrez l'entrée en stock d'un lot fournisseur après contrôle qualité.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <a href="{% url 'stock_lots' %}" class="btn-secondary">Annuler</a>
+      <button type="button" class="btn-primary" @click="window.showToast('Lot réceptionné et ajouté au stock (démo).')">
+        <svg class="icon-sm"><use href="#i-save"></use></svg>
+        Enregistrer le lot
+      </button>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Informations du lot</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Champs obligatoires signalés par un astérisque.</p>
+          </div>
+          <span class="badge bg-slate-100 text-slate-600 ring-slate-200">F-12</span>
+        </div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="label" for="product">Produit *</label>
+            <select id="product" name="product" class="field" onchange="window.location.href='?product=' + encodeURIComponent(this.value)">
+              {% for product in products %}
+                <option value="{{ product.code }}" {% if selected_product.code == product.code %}selected{% endif %}>{{ product.name }} · {{ product.form }}</option>
+              {% endfor %}
+            </select>
+            <p class="mt-1.5 text-[10px] text-slate-400">Référence sélectionnée : {{ selected_product.code }} · code-barres {{ selected_product.barcode }}</p>
+          </div>
+          <div>
+            <label class="label" for="lot">Numéro de lot *</label>
+            <div class="flex gap-2">
+              <input id="lot" type="text" class="field" value="LOT-2027-M042">
+              <button type="button" class="btn-secondary shrink-0 px-3" title="Scanner le code-barres" @click="window.showToast('Lecteur code-barres activé (démo).')"><svg class="icon-sm"><use href="#i-scan"></use></svg></button>
+            </div>
+          </div>
+          <div>
+            <label class="label" for="supplier">Fournisseur *</label>
+            <select id="supplier" class="field">
+              {% for supplier in suppliers %}<option {% if supplier == selected_product.supplier %}selected{% endif %}>{{ supplier }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="label" for="quantity">Quantité reçue *</label>
+            <div class="relative">
+              <input id="quantity" type="number" min="1" class="field pr-12 tabular" value="{{ received }}">
+              <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] font-semibold uppercase text-slate-400">unités</span>
+            </div>
+          </div>
+          <div>
+            <label class="label" for="location">Emplacement de stockage *</label>
+            <select id="location" class="field">
+              <option>{{ selected_product.location }}</option>
+              <option>A-12</option>
+              <option>B-04</option>
+              <option>C-02</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="manufacture">Date de fabrication</label>
+            <input id="manufacture" type="date" class="field text-slate-600" value="2026-09-01">
+          </div>
+          <div>
+            <label class="label" for="expiry">Date de péremption *</label>
+            <input id="expiry" type="date" class="field text-slate-600" value="2028-09-01">
+          </div>
+          <div>
+            <label class="label" for="price">Prix d'achat unitaire *</label>
+            <div class="relative">
+              <input id="price" type="number" class="field pr-14 tabular" value="{{ selected_product.price }}">
+              <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] font-semibold uppercase text-slate-400">FCFA</span>
+            </div>
+          </div>
+          <div>
+            <label class="label" for="invoice">N° de facture fournisseur</label>
+            <input id="invoice" type="text" class="field" value="FAC-2026-0912">
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Contrôle qualité à réception</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Toute non-conformité place le lot en quarantaine automatiquement.</p>
+          </div>
+          <span class="badge" :class="conform ? 'bg-emerald-50 text-emerald-700 ring-emerald-200/70' : 'bg-rose-50 text-rose-700 ring-rose-200/70'">
+            <span class="h-1.5 w-1.5 rounded-full" :class="conform ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+            <span x-text="conform ? 'Conforme' : 'Non conforme'"></span>
+          </span>
+        </div>
+        <div class="mt-4 grid gap-2.5 sm:grid-cols-2">
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @change="conform = true">
+            Emballage intact et scellé
+          </label>
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Étiquetage et notice conformes
+          </label>
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Chaîne du froid respectée
+          </label>
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Quantité et référence vérifiées
+          </label>
+        </div>
+        <div class="mt-4">
+          <label class="label" for="note">Observation</label>
+          <textarea id="note" rows="2" class="field resize-none" placeholder="Aucune observation…"></textarea>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h2 class="text-base font-extrabold tracking-tight text-slate-900">Dernières réceptions</h2>
+          <a href="{% url 'stock_lots' %}" class="text-[11px] font-bold text-brand-700 hover:text-brand-800">Voir le stock</a>
+        </div>
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full min-w-[720px]">
+            <thead class="bg-slate-50/70"><tr><th class="table-th">Lot</th><th class="table-th">Produit</th><th class="table-th">Fournisseur</th><th class="table-th text-center">Quantité</th><th class="table-th text-right">Reçu le</th></tr></thead>
+            <tbody>
+              {% for reception in recent_receptions %}
+                <tr class="table-row">
+                  <td class="table-td"><span class="rounded-md bg-brand-50 px-2 py-1 text-[10px] font-bold text-brand-700 ring-1 ring-inset ring-brand-200/70">{{ reception.lot }}</span></td>
+                  <td class="table-td font-semibold text-slate-700">{{ reception.product }}</td>
+                  <td class="table-td">{{ reception.supplier }}</td>
+                  <td class="table-td text-center font-bold text-slate-800 tabular">{{ reception.qty }}</td>
+                  <td class="table-td text-right text-[11px] text-slate-500">{{ reception.date }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Produit sélectionné</h2>
+          <span class="badge {{ selected_product.status_tone.badge }}">{{ selected_product.status_label }}</span>
+        </div>
+        <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <div class="flex items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-brand-700 shadow-sm ring-1 ring-slate-200"><svg class="icon"><use href="#i-pill"></use></svg></span>
+            <div class="min-w-0">
+              <p class="text-sm font-extrabold leading-5 text-slate-900">{{ selected_product.name }}</p>
+              <p class="mt-0.5 text-[11px] text-slate-500">{{ selected_product.form }} · {{ selected_product.category }}</p>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-3 text-[11px]">
+            <div><p class="text-slate-400">Stock actuel</p><p class="mt-0.5 text-base font-extrabold text-slate-900 tabular">{{ selected_product.stock }}</p></div>
+            <div><p class="text-slate-400">Seuil d'alerte</p><p class="mt-0.5 text-base font-extrabold text-slate-900 tabular">{{ selected_product.threshold }}</p></div>
+            <div><p class="text-slate-400">Emplacement</p><p class="mt-0.5 font-bold text-slate-700">{{ selected_product.location }}</p></div>
+            <div><p class="text-slate-400">Délai fournisseur</p><p class="mt-0.5 font-bold text-slate-700">{{ selected_product.delay }}</p></div>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50 px-3.5 py-3">
+          <span class="text-[11px] font-semibold text-brand-800">Stock après réception</span>
+          <span class="text-lg font-extrabold text-brand-800 tabular">{{ after }}</span>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-[11px]">
+          <span class="text-slate-500">Valeur du lot reçu</span>
+          <b class="text-slate-800 tabular">{{ impact_value|fcfa }}</b>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-[11px]">
+          <span class="text-slate-500">TVA applicable</span>
+          <b class="text-slate-800">{{ selected_product.vat }}</b>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Contrôles obligatoires</h2>
+        <div class="mt-3 space-y-3 text-[11px] leading-5">
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-600"><svg class="h-3 w-3"><use href="#i-check"></use></svg></span>
+            <p class="text-slate-500"><b class="text-slate-700">Lot unique.</b> Aucun doublon sur ce numéro de lot.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-600"><svg class="h-3 w-3"><use href="#i-check"></use></svg></span>
+            <p class="text-slate-500"><b class="text-slate-700">Péremption valide.</b> Date postérieure à aujourd'hui.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-600"><svg class="h-3 w-3"><use href="#i-alert"></use></svg></span>
+            <p class="text-slate-500"><b class="text-slate-700">Bon de commande.</b> Réception partielle sur CMD-2026-0149.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Validation</h2>
+        <p class="mt-1 text-[11px] leading-5 text-slate-500">L'enregistrement crée un mouvement d'entrée immuable et met à jour le stock disponible.</p>
+        <div class="mt-4 space-y-2">
+          <button type="button" class="btn-primary w-full" @click="window.showToast('Lot réceptionné et ajouté au stock (démo).')">
+            <svg class="icon-sm"><use href="#i-save"></use></svg>
+            Enregistrer le lot
+          </button>
+          <button type="button" class="btn-secondary w-full" @click="window.showToast('Enregistrement en brouillon (démo).')">
+            <svg class="icon-sm"><use href="#i-save"></use></svg>
+            Enregistrer en brouillon
+          </button>
+        </div>
+        <p class="mt-3 text-center text-[10px] text-slate-400">Réception enregistrée par {{ user.name }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

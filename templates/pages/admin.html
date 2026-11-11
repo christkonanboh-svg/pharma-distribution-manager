@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Administration — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ tab: 'users', toggles: { mfa: true, sso: false, lock: true, trace: true } }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+        Gouvernance
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Administration</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Comptes utilisateurs, rôles, permissions et journal de sécurité.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Journal d\'audit exporté (démo).')">
+        <svg class="icon-sm"><use href="#i-download"></use></svg>
+        Exporter l'audit
+      </button>
+      <button type="button" class="btn-primary" @click="window.showToast('Invitation envoyée au nouvel utilisateur (démo).')">
+        <svg class="icon-sm"><use href="#i-plus"></use></svg>
+        Inviter un utilisateur
+      </button>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {% for stat in stats %}
+      <div class="card card-hover p-4 animate-fade-up" style="animation-delay: {% widthratio forloop.counter0 1 60 %}ms">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-slate-500">{{ stat.label }}</p>
+          <span class="grid h-9 w-9 place-items-center rounded-xl
+            {% if stat.tone == 'teal' %}bg-brand-50 text-brand-700
+            {% elif stat.tone == 'violet' %}bg-violet-50 text-violet-600
+            {% elif stat.tone == 'blue' %}bg-sky-50 text-sky-600
+            {% else %}bg-amber-50 text-amber-600{% endif %}">
+            <svg class="icon-sm"><use href="#i-{{ stat.icon }}"></use></svg>
+          </span>
+        </div>
+        <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stat.value }}</p>
+        <p class="mt-1 text-[11px] text-slate-400">{{ stat.detail }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-3 pt-3 sm:px-4">
+          <button type="button" @click="tab = 'users'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'users' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Utilisateurs <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'users' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">12</span></button>
+          <button type="button" @click="tab = 'roles'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'roles' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Rôles <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'roles' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ roles|length }}</span></button>
+          <button type="button" @click="tab = 'audit'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'audit' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Journal d'audit</button>
+          <button type="button" @click="tab = 'securite'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'securite' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Sécurité</button>
+        </div>
+
+        <div x-show="tab === 'users'" x-transition.opacity>
+          <div class="border-b border-slate-100 px-4 py-3">
+            <form method="get" action="{% url 'administration' %}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div class="relative min-w-0 flex-1">
+                <svg class="field-icon"><use href="#i-search"></use></svg>
+                <input type="search" name="q" value="{{ query }}" class="field h-10 pl-10" placeholder="Rechercher un nom, un e-mail…">
+              </div>
+              <select name="role" class="field h-10 sm:w-56">
+                <option value="">Tous les rôles</option>
+                {% for role in role_values %}<option value="{{ role }}" {% if active_role == role %}selected{% endif %}>{{ role }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn-secondary h-10 px-3 text-xs"><svg class="icon-sm"><use href="#i-filter"></use></svg> Filtrer</button>
+            </form>
+          </div>
+          <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full min-w-[900px]">
+              <thead class="bg-slate-50/70"><tr><th class="table-th">Utilisateur</th><th class="table-th">Rôle</th><th class="table-th">Dernière connexion</th><th class="table-th">Poste</th><th class="table-th">Statut</th><th class="table-th text-right">Actions</th></tr></thead>
+              <tbody>
+                {% for user in users %}
+                  <tr class="table-row">
+                    <td class="table-td">
+                      <div class="flex items-center gap-2.5">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-100 to-brand-50 text-[10px] font-extrabold text-brand-700 ring-1 ring-inset ring-brand-200/60">{{ user.initials }}</span>
+                        <div>
+                          <p class="font-bold text-slate-800">{{ user.name }}</p>
+                          <p class="text-[10px] text-slate-400">{{ user.email }}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{{ user.role }}</span></td>
+                    <td class="table-td"><p class="text-[11px] text-slate-600">{{ user.last }}</p><p class="text-[10px] text-slate-400">{{ user.ip }}</p></td>
+                    <td class="table-td"><span class="badge bg-white text-slate-600 ring-slate-200">{{ user.location }}</span></td>
+                    <td class="table-td">
+                      {% if user.active %}
+                        <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Actif</span>
+                      {% else %}
+                        <span class="badge bg-slate-100 text-slate-500 ring-slate-200"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Désactivé</span>
+                      {% endif %}
+                    </td>
+                    <td class="table-td text-right">
+                      <div class="flex items-center justify-end gap-1">
+                        <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-700" title="Modifier" @click="window.showToast('Modification du compte {{ user.name }} (démo).')"><svg class="icon-sm"><use href="#i-edit"></use></svg></button>
+                        <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" title="Réinitialiser le mot de passe" @click="window.showToast('Lien de réinitialisation envoyé à {{ user.email }} (démo).')"><svg class="icon-sm"><use href="#i-key"></use></svg></button>
+                        <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600" title="Désactiver" @click="window.showToast('Compte {{ user.name }} désactivé (démo).', 'error')"><svg class="icon-sm"><use href="#i-ban"></use></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="6" class="px-5 py-14 text-center text-sm text-slate-500">Aucun utilisateur ne correspond à ces critères.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-[11px] text-slate-400">{{ total_users }} utilisateur{{ total_users|pluralize }} affiché{{ total_users|pluralize }}</p>
+            <p class="text-[10px] text-slate-400">Les comptes inactifs ne peuvent plus se connecter.</p>
+          </div>
+        </div>
+
+        <div x-show="tab === 'roles'" x-transition.opacity style="display: none">
+          <div class="grid gap-3 p-5 sm:grid-cols-2">
+            {% for role in roles %}
+              <div class="rounded-xl border border-slate-200 p-4 transition hover:border-brand-200 hover:bg-brand-50/20">
+                <div class="flex items-start gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg
+                    {% if role.tone == 'violet' %}bg-violet-50 text-violet-600
+                    {% elif role.tone == 'teal' %}bg-brand-50 text-brand-700
+                    {% elif role.tone == 'blue' %}bg-sky-50 text-sky-600
+                    {% elif role.tone == 'amber' %}bg-amber-50 text-amber-600
+                    {% else %}bg-slate-100 text-slate-600{% endif %}">
+                    <svg class="icon-sm"><use href="#i-{{ role.icon }}"></use></svg>
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="text-xs font-extrabold text-slate-800">{{ role.name }}</p>
+                      <span class="badge bg-white text-slate-500 ring-slate-200">{{ role.count }} utilisateur{{ role.count|pluralize }}</span>
+                    </div>
+                    <p class="mt-1 text-[10px] leading-5 text-slate-500">{{ role.detail }}</p>
+                    <button type="button" class="mt-2 text-[10px] font-bold text-brand-700 hover:text-brand-800" @click="window.showToast('Permissions du rôle {{ role.name }} ouvertes (démo).')">Configurer les permissions</button>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] text-slate-400">Les permissions sont attribuées par rôle et contrôlées à chaque action sensible (RG-10).</div>
+        </div>
+
+        <div x-show="tab === 'audit'" x-transition.opacity style="display: none">
+          <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <p class="text-xs font-semibold text-slate-500">248 actions journalisées aujourd'hui</p>
+            <button type="button" class="btn-ghost h-8 px-2.5 text-xs" @click="window.showToast('Filtres avancés du journal ouverts (démo).')"><svg class="icon-sm"><use href="#i-filter"></use></svg> Filtres</button>
+          </div>
+          <div class="divide-y divide-slate-100">
+            {% for entry in audit %}
+              <div class="flex items-center gap-3 px-4 py-3.5">
+                <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg
+                  {% if entry.tone == 'rose' %}bg-rose-50 text-rose-600
+                  {% elif entry.tone == 'teal' %}bg-brand-50 text-brand-700
+                  {% elif entry.tone == 'blue' %}bg-sky-50 text-sky-600
+                  {% else %}bg-slate-100 text-slate-500{% endif %}">
+                  <svg class="icon-sm"><use href="#i-activity"></use></svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[11px] font-bold text-slate-800">{{ entry.title }}</p>
+                  <p class="text-[10px] text-slate-400">{{ entry.detail }}</p>
+                </div>
+                <span class="text-[10px] font-semibold text-slate-400">{{ entry.time }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] text-slate-400">Journal en lecture seule, conservé pour audit et conformité (RG-06).</div>
+        </div>
+
+        <div x-show="tab === 'securite'" x-transition.opacity style="display: none">
+          <div class="p-5">
+            <h3 class="text-sm font-extrabold text-slate-900">Politique de sécurité</h3>
+            <p class="mt-0.5 text-xs text-slate-500">Paramètres appliqués à l'ensemble des comptes.</p>
+            <div class="mt-4 divide-y divide-slate-100">
+              <div class="flex items-center gap-3 py-3.5">
+                <div class="min-w-0 flex-1"><p class="text-xs font-bold text-slate-800">Authentification à deux facteurs</p><p class="mt-0.5 text-[10px] text-slate-400">Obligatoire pour les rôles pharmacien et administrateur.</p></div>
+                <button type="button" class="inline-flex h-5 w-9 items-center rounded-full px-0.5 transition" :class="toggles.mfa ? 'bg-brand-500' : 'bg-slate-200'" @click="toggles.mfa = !toggles.mfa"><span class="h-4 w-4 rounded-full bg-white shadow-sm transition" :class="toggles.mfa ? 'translate-x-4' : 'translate-x-0'"></span></button>
+              </div>
+              <div class="flex items-center gap-3 py-3.5">
+                <div class="min-w-0 flex-1"><p class="text-xs font-bold text-slate-800">Connexion unique (SSO)</p><p class="mt-0.5 text-[10px] text-slate-400">Délégation de l'authentification au fournisseur d'identité.</p></div>
+                <button type="button" class="inline-flex h-5 w-9 items-center rounded-full px-0.5 transition" :class="toggles.sso ? 'bg-brand-500' : 'bg-slate-200'" @click="toggles.sso = !toggles.sso"><span class="h-4 w-4 rounded-full bg-white shadow-sm transition" :class="toggles.sso ? 'translate-x-4' : 'translate-x-0'"></span></button>
+              </div>
+              <div class="flex items-center gap-3 py-3.5">
+                <div class="min-w-0 flex-1"><p class="text-xs font-bold text-slate-800">Verrouillage après 5 échecs</p><p class="mt-0.5 text-[10px] text-slate-400">Suspension temporaire du compte pendant 15 minutes.</p></div>
+                <button type="button" class="inline-flex h-5 w-9 items-center rounded-full px-0.5 transition" :class="toggles.lock ? 'bg-brand-500' : 'bg-slate-200'" @click="toggles.lock = !toggles.lock"><span class="h-4 w-4 rounded-full bg-white shadow-sm transition" :class="toggles.lock ? 'translate-x-4' : 'translate-x-0'"></span></button>
+              </div>
+              <div class="flex items-center gap-3 py-3.5">
+                <div class="min-w-0 flex-1"><p class="text-xs font-bold text-slate-800">Traçabilité des actions</p><p class="mt-0.5 text-[10px] text-slate-400">Journalisation de toutes les actions sensibles.</p></div>
+                <button type="button" class="inline-flex h-5 w-9 items-center rounded-full px-0.5 transition" :class="toggles.trace ? 'bg-brand-500' : 'bg-slate-200'" @click="toggles.trace = !toggles.trace"><span class="h-4 w-4 rounded-full bg-white shadow-sm transition" :class="toggles.trace ? 'translate-x-4' : 'translate-x-0'"></span></button>
+              </div>
+            </div>
+            <button type="button" class="btn-primary mt-4" @click="window.showToast('Politique de sécurité enregistrée (démo).')"><svg class="icon-sm"><use href="#i-save"></use></svg> Enregistrer la politique</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Rôles &amp; permissions</h2>
+          <button type="button" class="text-[11px] font-bold text-brand-700 hover:text-brand-800" @click="tab = 'roles'">Gérer</button>
+        </div>
+        <div class="mt-2 divide-y divide-slate-100">
+          {% for role in roles %}
+            <div class="flex items-center gap-2.5 py-3">
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500"><svg class="icon-sm"><use href="#i-{{ role.icon }}"></use></svg></span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[11px] font-bold text-slate-800">{{ role.name }}</p>
+                <p class="truncate text-[10px] text-slate-400">{{ role.detail }}</p>
+              </div>
+              <span class="text-[10px] font-bold text-slate-400 tabular">{{ role.count }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Activité récente</h2>
+          <span class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>En direct</span>
+        </div>
+        <div class="mt-2 divide-y divide-slate-100">
+          {% for entry in audit %}
+            <div class="flex items-start gap-2.5 py-3">
+              <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full
+                {% if entry.tone == 'rose' %}bg-rose-500
+                {% elif entry.tone == 'teal' %}bg-brand-500
+                {% elif entry.tone == 'blue' %}bg-sky-500
+                {% else %}bg-slate-300{% endif %}"></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] font-semibold leading-5 text-slate-700">{{ entry.title }}</p>
+                <p class="text-[10px] text-slate-400">{{ entry.time }} · {{ entry.detail }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:text-brand-800" @click="tab = 'audit'">Voir tout le journal <svg class="h-3 w-3"><use href="#i-arrow-right"></use></svg></button>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-start gap-2.5">
+          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600"><svg class="icon-sm"><use href="#i-lock"></use></svg></span>
+          <div>
+            <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Sessions actives</h2>
+            <p class="mt-0.5 text-[10px] leading-5 text-slate-400">4 postes connectés actuellement.</p>
+          </div>
+        </div>
+        <div class="mt-3 space-y-2">
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-[10px]"><span class="text-slate-600">Awa Konan · Abidjan</span><span class="font-semibold text-emerald-600">Maintenant</span></div>
+          <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-[10px]"><span class="text-slate-600">M. Diabaté · Entrepôt</span><span class="text-slate-400">06:58</span></div>
+        </div>
+        <button type="button" class="btn-ghost mt-3 h-8 w-full text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700" @click="window.showToast('Sessions distantes révoquées (démo).', 'error')">Révoquer les autres sessions</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

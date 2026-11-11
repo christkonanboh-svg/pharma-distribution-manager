@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Rappel {{ rappel.lot.lot }} — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ confirm: false }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <a href="{% url 'tracabilite' %}" class="transition hover:text-brand-700">Traçabilité</a>
+        <svg class="icon-sm h-3 w-3"><use href="#i-chevron-right"></use></svg>
+        <span class="text-slate-600">Rappel de lot</span>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Rappel de lot</h1>
+        <span class="badge bg-rose-50 text-rose-700 ring-rose-200/70"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>Procédure critique</span>
+      </div>
+      <p class="mt-1.5 text-sm text-slate-500">Retrait immédiat du lot, blocage du stock et notification des clients concernés.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <a href="{% url 'tracabilite' %}" class="btn-secondary">Annuler</a>
+      <button type="button" class="btn bg-rose-600 text-white shadow-sm hover:bg-rose-700" @click="confirm = true">
+        <svg class="icon-sm"><use href="#i-alert"></use></svg>
+        Confirmer le rappel
+      </button>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-white p-4 animate-fade-up">
+    <div class="flex items-start gap-3">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700"><svg class="icon"><use href="#i-alert"></use></svg></span>
+      <div class="min-w-0">
+        <h2 class="text-sm font-extrabold text-rose-900">Procédure de pharmacovigilance</h2>
+        <p class="mt-1 text-xs leading-5 text-rose-700">Le rappel est définitif après confirmation. Toutes les unités du lot seront bloquées et les clients notifiés. Action réservée au pharmacien responsable (RG-08).</p>
+      </div>
+      <span class="ml-auto hidden shrink-0 rounded-lg bg-white px-2.5 py-1.5 text-[10px] font-bold text-rose-700 ring-1 ring-rose-200 sm:block">Niveau 2 · Urgent</span>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-3 animate-fade-up">
+    <div class="card p-4">
+      <div class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-rose-600 text-[11px] font-extrabold text-white">1</span><p class="text-xs font-bold text-slate-800">Identification</p></div>
+      <p class="mt-2 text-[11px] leading-5 text-slate-500">Lot et quantité concernés vérifiés : {{ rappel.lot.lot }} · {{ rappel.units_delivered }} unités livrées.</p>
+    </div>
+    <div class="card p-4">
+      <div class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-rose-600 text-[11px] font-extrabold text-white">2</span><p class="text-xs font-bold text-slate-800">Blocage &amp; notification</p></div>
+      <p class="mt-2 text-[11px] leading-5 text-slate-500">Blocage immédiat du stock et notification de {{ rappel.total }} clients concernés.</p>
+    </div>
+    <div class="card p-4">
+      <div class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full border-2 border-slate-200 text-[11px] font-extrabold text-slate-400">3</span><p class="text-xs font-bold text-slate-500">Suivi &amp; clôture</p></div>
+      <p class="mt-2 text-[11px] leading-5 text-slate-400">Consigner les retours, les quantités récupérées et clôturer la procédure.</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200/70"><svg class="h-6 w-6"><use href="#i-box"></use></svg></span>
+            <div>
+              <h2 class="text-lg font-extrabold tracking-tight text-slate-900">{{ rappel.lot.lot }}</h2>
+              <p class="mt-0.5 text-xs text-slate-500">{{ rappel.lot.product }} · {{ rappel.lot.code }} · {{ rappel.lot.supplier }}</p>
+            </div>
+          </div>
+          <span class="badge bg-rose-50 text-rose-700 ring-rose-200/70">Lot concerné</span>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4">
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Quantité reçue</p><p class="mt-0.5 text-sm font-extrabold text-slate-800 tabular">{{ rappel.lot.qty_received }}</p></div>
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Unités livrées</p><p class="mt-0.5 text-sm font-extrabold text-rose-700 tabular">{{ rappel.units_delivered }}</p></div>
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Stock restant</p><p class="mt-0.5 text-sm font-extrabold text-amber-700 tabular">{{ rappel.lot.qty_remaining }}</p></div>
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Péremption</p><p class="mt-0.5 text-sm font-extrabold text-slate-800">{{ rappel.lot.expiry }}</p></div>
+        </div>
+        <div class="mt-3 flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-[11px] leading-5 text-rose-800">
+          <svg class="icon-sm mt-0.5 shrink-0"><use href="#i-lock"></use></svg>
+          <p>Dès confirmation, ce lot ne pourra plus être proposé en préparation ni délivré. Les mouvements existants restent immuables.</p>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="flex flex-col gap-2 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Clients à notifier</h2>
+            <p class="mt-0.5 text-xs text-slate-500">{{ rappel.notified }} / {{ rappel.total }} déjà notifiés · {{ rappel.units_delivered }} unités à retirer</p>
+          </div>
+          <button type="button" class="btn-secondary h-8 self-start px-2.5 text-xs" @click="window.showToast('Liste des destinataires exportée (démo).')"><svg class="icon-sm"><use href="#i-download"></use></svg> Exporter</button>
+        </div>
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full min-w-[720px]">
+            <thead class="bg-slate-50/70">
+              <tr><th class="table-th w-8"><input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" aria-label="Tout sélectionner"></th><th class="table-th">Client</th><th class="table-th">Délivré le</th><th class="table-th text-center">Quantité</th><th class="table-th">Commande</th><th class="table-th">Notification</th></tr>
+            </thead>
+            <tbody>
+              {% for client in rappel.clients %}
+                <tr class="table-row">
+                  <td class="table-td"><input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" aria-label="Sélectionner {{ client.client }}"></td>
+                  <td class="table-td">
+                    <div class="flex items-center gap-2.5">
+                      <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">{{ client.initials }}</span>
+                      <div>
+                        <p class="font-bold text-slate-800">{{ client.client }}</p>
+                        <p class="text-[10px] text-slate-400">{{ client.type }} · {{ client.city }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="table-td text-[11px] text-slate-500">{{ client.date }}</td>
+                  <td class="table-td text-center font-bold text-rose-700 tabular">{{ client.qty }}</td>
+                  <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">{{ client.order }}</span></td>
+                  <td class="table-td">
+                    {% if client.notified %}
+                      <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Notifié</span>
+                    {% else %}
+                      <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>En attente</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-[11px] text-slate-500">Canaux disponibles : e-mail, SMS et appel téléphonique.</p>
+          <button type="button" class="btn-secondary h-8 px-2.5 text-xs" @click="window.showToast('Notifications envoyées aux clients sélectionnés (démo).')"><svg class="icon-sm"><use href="#i-bell"></use></svg> Notifier la sélection</button>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-base font-extrabold tracking-tight text-slate-900">Message de notification</h2>
+        <p class="mt-0.5 text-xs text-slate-500">Le message sera envoyé aux {{ rappel.total }} clients concernés.</p>
+        <textarea id="rappel-message" rows="8" class="field mt-3 resize-none text-xs leading-6">{{ rappel.message }}</textarea>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Impact du rappel</h2>
+          <span class="badge bg-rose-50 text-rose-700 ring-rose-200/70">Critique</span>
+        </div>
+        <div class="mt-4 space-y-3">
+          <div class="rounded-xl border border-rose-100 bg-rose-50/70 p-3.5">
+            <div class="flex items-center justify-between"><span class="text-[11px] text-rose-700">Unités livrées à retirer</span><b class="text-lg font-extrabold text-rose-800 tabular">{{ rappel.units_delivered }}</b></div>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+            <div class="flex items-center justify-between"><span class="text-[11px] text-slate-500">Unités encore en stock</span><b class="text-lg font-extrabold text-slate-800 tabular">{{ rappel.lot.qty_remaining }}</b></div>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+            <div class="flex items-center justify-between"><span class="text-[11px] text-slate-500">Clients à contacter</span><b class="text-lg font-extrabold text-slate-800 tabular">{{ rappel.total }}</b></div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="mb-1 flex items-center justify-between text-[10px] font-semibold"><span class="text-slate-500">Notifications envoyées</span><span class="text-slate-700">{{ rappel.notified }} / {{ rappel.total }}</span></div>
+          <div class="progress-track"><div class="progress-fill bg-rose-500" style="width: {{ rappel.progress }}%"></div></div>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Actions de suivi</h2>
+        <div class="mt-3 space-y-2">
+          <button type="button" class="btn-secondary w-full justify-between text-xs" @click="window.showToast('Rapport de rappel généré (démo).')">
+            <span class="flex items-center gap-2"><svg class="icon-sm"><use href="#i-download"></use></svg> Rapport de rappel</span>
+            <svg class="icon-sm text-slate-400"><use href="#i-chevron-right"></use></svg>
+          </button>
+          <button type="button" class="btn-secondary w-full justify-between text-xs" @click="window.showToast('Fiche de retrait créée (démo).')">
+            <span class="flex items-center gap-2"><svg class="icon-sm"><use href="#i-clipboard"></use></svg> Fiche de retrait</span>
+            <svg class="icon-sm text-slate-400"><use href="#i-chevron-right"></use></svg>
+          </button>
+          <button type="button" class="btn-ghost w-full justify-between text-xs" @click="window.showToast('Procédure consignée dans le journal d\'audit (démo).')">
+            <span class="flex items-center gap-2"><svg class="icon-sm"><use href="#i-history"></use></svg> Journal d'audit</span>
+            <svg class="icon-sm text-slate-400"><use href="#i-chevron-right"></use></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Confirmation</h2>
+        <label class="mt-3 flex cursor-pointer items-start gap-2.5 text-[11px] leading-5 text-slate-500">
+          <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+          Je confirme avoir vérifié le lot et les destinataires.
+        </label>
+        <button type="button" class="btn mt-4 w-full bg-rose-600 text-white shadow-sm hover:bg-rose-700" @click="confirm = true">
+          <svg class="icon-sm"><use href="#i-alert"></use></svg>
+          Confirmer le rappel
+        </button>
+        <p class="mt-2 text-center text-[10px] text-slate-400">Action journalisée et irréversible.</p>
+      </div>
+    </div>
+  </div>
+
+  <div x-show="confirm" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" style="display: none" @keydown.escape.window="confirm = false">
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" @click.outside="confirm = false">
+      <div class="flex items-start gap-3">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700"><svg class="icon"><use href="#i-alert"></use></svg></span>
+        <div>
+          <h3 class="text-lg font-extrabold tracking-tight text-slate-900">Confirmer le rappel du lot ?</h3>
+          <p class="mt-1 text-xs leading-5 text-slate-500">Le lot <b class="text-slate-700">{{ rappel.lot.lot }}</b> sera immédiatement bloqué et {{ rappel.total }} clients seront notifiés. Cette action est irréversible.</p>
+        </div>
+      </div>
+      <div class="mt-5 flex gap-2">
+        <button type="button" class="btn-secondary flex-1" @click="confirm = false">Annuler</button>
+        <button type="button" class="btn flex-1 bg-rose-600 text-white hover:bg-rose-700" @click="confirm = false; window.showToast('Rappel confirmé. Lot bloqué et clients notifiés (démo).', 'error')">Confirmer le rappel</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

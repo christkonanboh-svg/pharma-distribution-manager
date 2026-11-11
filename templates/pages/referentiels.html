@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Référentiels — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ tab: 'produits' }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+        Données de référence
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Référentiels</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Produits, fournisseurs, clients et catégories thérapeutiques de la pharmacie centrale.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Import de référentiel ouvert (démo).')">
+        <svg class="icon-sm"><use href="#i-upload"></use></svg>
+        Importer
+      </button>
+      <button type="button" class="btn-primary" @click="window.showToast('Nouvelle fiche produit ouverte (démo).')">
+        <svg class="icon-sm"><use href="#i-plus"></use></svg>
+        Nouveau produit
+      </button>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card card-hover p-4 animate-fade-up">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Produits</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 text-brand-700"><svg class="icon-sm"><use href="#i-pill"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.products }}</p>
+      <p class="mt-1 text-[11px] text-slate-400">{{ stats.categories }} catégories thérapeutiques</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 60ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Sous le seuil</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-600"><svg class="icon-sm"><use href="#i-alert"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.low }}</p>
+      <p class="mt-1 text-[11px] text-slate-400">références à réapprovisionner</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 120ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Fournisseurs</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600"><svg class="icon-sm"><use href="#i-truck"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.suppliers }}</p>
+      <p class="mt-1 text-[11px] text-slate-400">partenaires agréés</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 180ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Clients</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600"><svg class="icon-sm"><use href="#i-users"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.clients }}</p>
+      <p class="mt-1 text-[11px] text-slate-400">pharmacies et structures</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-3 pt-3 sm:px-4">
+          <button type="button" @click="tab = 'produits'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'produits' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Produits <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'produits' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ stats.products }}</span></button>
+          <button type="button" @click="tab = 'fournisseurs'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'fournisseurs' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Fournisseurs <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'fournisseurs' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ stats.suppliers }}</span></button>
+          <button type="button" @click="tab = 'clients'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'clients' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Clients <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'clients' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ stats.clients }}</span></button>
+          <button type="button" @click="tab = 'categories'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'categories' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">Catégories <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'categories' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ stats.categories }}</span></button>
+        </div>
+
+        <div x-show="tab === 'produits'" x-transition.opacity>
+          <div class="border-b border-slate-100 px-4 py-3">
+            <form method="get" action="{% url 'referentiels' %}" class="flex flex-col gap-2 lg:flex-row lg:items-center">
+              <div class="relative min-w-0 flex-1">
+                <svg class="field-icon"><use href="#i-search"></use></svg>
+                <input type="search" name="q" value="{{ query }}" class="field h-10 pl-10" placeholder="Rechercher un produit, un code…">
+              </div>
+              <select name="category" class="field h-10 lg:w-44">
+                <option value="">Toutes catégories</option>
+                {% for category in category_values %}<option value="{{ category }}" {% if active_category == category %}selected{% endif %}>{{ category }}</option>{% endfor %}
+              </select>
+              <select name="status" class="field h-10 lg:w-40">
+                {% for status in product_statuses %}<option value="{{ status.value }}" {% if active_status == status.value %}selected{% endif %}>{{ status.label }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn-secondary h-10 px-3 text-xs"><svg class="icon-sm"><use href="#i-filter"></use></svg> Filtrer</button>
+            </form>
+          </div>
+          <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full min-w-[880px]">
+              <thead class="bg-slate-50/70">
+                <tr><th class="table-th w-8"></th><th class="table-th">Produit</th><th class="table-th">Catégorie</th><th class="table-th text-center">Stock</th><th class="table-th text-center">Seuil</th><th class="table-th text-right">Prix</th><th class="table-th">Statut</th></tr>
+              </thead>
+              <tbody>
+                {% for product in products %}
+                  <tr class="table-row {% if selected.code == product.code %}bg-brand-50/40{% endif %}">
+                    <td class="table-td"><input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" aria-label="Sélectionner {{ product.name }}"></td>
+                    <td class="table-td">
+                      <a href="?product={{ product.code }}&q={{ query }}&category={{ active_category }}&status={{ active_status }}" class="font-bold text-slate-800 transition hover:text-brand-700">{{ product.name }}</a>
+                      <p class="mt-0.5 text-[10px] text-slate-400">{{ product.code }} · {{ product.form }}</p>
+                    </td>
+                    <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{{ product.category }}</span></td>
+                    <td class="table-td text-center font-bold text-slate-800 tabular">{{ product.stock }}</td>
+                    <td class="table-td text-center text-slate-500 tabular">{{ product.threshold }}</td>
+                    <td class="table-td text-right font-semibold text-slate-700 tabular">{{ product.price|fcfa }}</td>
+                    <td class="table-td"><span class="badge {{ product.status_tone.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ product.status_tone.dot }}"></span>{{ product.status_label }}</span></td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="7" class="px-5 py-14 text-center text-sm text-slate-500">Aucun produit ne correspond à ces critères.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-[11px] text-slate-400">{{ total_products }} produit{{ total_products|pluralize }} affiché{{ total_products|pluralize }} sur {{ stats.products }}</p>
+            <div class="flex items-center gap-1">
+              <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled><svg class="icon-sm"><use href="#i-arrow-left"></use></svg></button>
+              <span class="grid h-8 w-8 place-items-center rounded-lg bg-slate-900 text-xs font-bold text-white">1</span>
+              <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled><svg class="icon-sm"><use href="#i-chevron-right"></use></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div x-show="tab === 'fournisseurs'" x-transition.opacity style="display: none">
+          <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full min-w-[800px]">
+              <thead class="bg-slate-50/70"><tr><th class="table-th">Fournisseur</th><th class="table-th">Contact</th><th class="table-th">Téléphone</th><th class="table-th text-center">Produits</th><th class="table-th text-center">Délai</th><th class="table-th">Statut</th></tr></thead>
+              <tbody>
+                {% for supplier in suppliers %}
+                  <tr class="table-row">
+                    <td class="table-td"><p class="font-bold text-slate-800">{{ supplier.name }}</p><p class="mt-0.5 text-[10px] text-slate-400">{{ supplier.code }}</p></td>
+                    <td class="table-td">{{ supplier.contact }}</td>
+                    <td class="table-td text-[11px] text-slate-500">{{ supplier.phone }}</td>
+                    <td class="table-td text-center font-bold text-slate-800 tabular">{{ supplier.products }}</td>
+                    <td class="table-td text-center text-slate-500">{{ supplier.delay }}</td>
+                    <td class="table-td"><span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>{{ supplier.status }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] text-slate-400">Les fournisseurs sont rattachés aux produits et aux bons de réception.</div>
+        </div>
+
+        <div x-show="tab === 'clients'" x-transition.opacity style="display: none">
+          <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full min-w-[760px]">
+              <thead class="bg-slate-50/70"><tr><th class="table-th">Client</th><th class="table-th">Type</th><th class="table-th">Ville</th><th class="table-th text-center">Commandes</th><th class="table-th">Statut</th><th class="table-th text-right">Actions</th></tr></thead>
+              <tbody>
+                {% for client in clients %}
+                  <tr class="table-row">
+                    <td class="table-td font-bold text-slate-800">{{ client.name }}</td>
+                    <td class="table-td text-[11px] text-slate-500">{{ client.type }}</td>
+                    <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{{ client.city }}</span></td>
+                    <td class="table-td text-center font-bold text-slate-800 tabular">{{ client.orders }}</td>
+                    <td class="table-td">
+                      {% if client.status == 'Actif' %}
+                        <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Actif</span>
+                      {% else %}
+                        <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>À valider</span>
+                      {% endif %}
+                    </td>
+                    <td class="table-td text-right"><button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-700" title="Voir les commandes" @click="window.showToast('Ouverture de la fiche client {{ client.name }} (démo).')"><svg class="icon-sm"><use href="#i-eye"></use></svg></button></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] text-slate-400">Les clients disposent d'une limite de crédit et d'une liste de prix associée.</div>
+        </div>
+
+        <div x-show="tab === 'categories'" x-transition.opacity style="display: none">
+          <div class="grid gap-4 p-5 sm:grid-cols-2">
+            {% for category in categories %}
+              <div class="rounded-xl border border-slate-200 p-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-extrabold text-slate-800">{{ category.name }}</p>
+                  <span class="badge bg-slate-100 text-slate-600 ring-slate-200">{{ category.products }} produits</span>
+                </div>
+                <div class="mt-3 flex items-center gap-2">
+                  <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-brand-500" style="width: {{ category.share }}%"></div></div>
+                  <span class="text-[10px] font-bold text-slate-400 tabular">{{ category.share }}%</span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] text-slate-400">Les catégories structurent les alertes, les rapports et les règles de réapprovisionnement.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Fiche produit</h2>
+          <span class="badge {{ selected.status_tone.badge }}">{{ selected.status_label }}</span>
+        </div>
+        <div class="mt-4 flex items-start gap-3">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200/70"><svg class="icon"><use href="#i-pill"></use></svg></span>
+          <div class="min-w-0">
+            <p class="text-sm font-extrabold leading-5 text-slate-900">{{ selected.name }}</p>
+            <p class="mt-0.5 text-[11px] text-slate-500">{{ selected.form }}</p>
+            <p class="text-[10px] text-slate-400">{{ selected.code }} · {{ selected.category }}</p>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-[11px]">
+          <div><p class="text-slate-400">Prix unitaire</p><p class="mt-0.5 font-extrabold text-slate-800 tabular">{{ selected.price|fcfa }}</p></div>
+          <div><p class="text-slate-400">TVA</p><p class="mt-0.5 font-extrabold text-slate-800">{{ selected.vat }}</p></div>
+          <div><p class="text-slate-400">Stock actuel</p><p class="mt-0.5 font-extrabold text-slate-800 tabular">{{ selected.stock }} u.</p></div>
+          <div><p class="text-slate-400">Seuil d'alerte</p><p class="mt-0.5 font-extrabold text-slate-800 tabular">{{ selected.threshold }} u.</p></div>
+          <div><p class="text-slate-400">Emplacement</p><p class="mt-0.5 font-bold text-slate-700">{{ selected.location }}</p></div>
+          <div><p class="text-slate-400">Délai fournisseur</p><p class="mt-0.5 font-bold text-slate-700">{{ selected.delay }}</p></div>
+        </div>
+        <div class="mt-3 rounded-xl border border-slate-200 p-3 text-[11px]">
+          <div class="flex items-center justify-between"><span class="text-slate-400">Fournisseur</span><b class="text-slate-700">{{ selected.supplier }}</b></div>
+          <div class="mt-1.5 flex items-center justify-between"><span class="text-slate-400">Code-barres</span><b class="font-mono text-[10px] text-slate-700">{{ selected.barcode }}</b></div>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button type="button" class="btn-primary flex-1 h-8 px-2.5 text-xs" @click="window.showToast('Fiche produit en modification (démo).')"><svg class="icon-sm"><use href="#i-edit"></use></svg> Modifier</button>
+          <a href="{% url 'reception_lot' %}?product={{ selected.code }}" class="btn-secondary flex-1 h-8 px-2.5 text-xs"><svg class="icon-sm"><use href="#i-plus"></use></svg> Réceptionner</a>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Catégories</h2>
+          <span class="text-[10px] font-semibold text-slate-400">{{ stats.categories }} au total</span>
+        </div>
+        <div class="mt-3 space-y-3">
+          {% for category in categories %}
+            <div class="flex items-center justify-between gap-3 text-[11px]">
+              <span class="truncate text-slate-500">{{ category.name }}</span>
+              <div class="flex items-center gap-2">
+                <div class="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-brand-500" style="width: {{ category.share }}%"></div></div>
+                <b class="w-6 text-right text-slate-700 tabular">{{ category.products }}</b>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="mt-4 w-full text-[11px] font-bold text-brand-700 hover:text-brand-800" @click="tab = 'categories'">Gérer les catégories</button>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Qualité des données</h2>
+        <div class="mt-3 space-y-2.5 text-[11px]">
+          <div class="flex items-center justify-between"><span class="text-slate-500">Références complètes</span><b class="text-emerald-600">98,4 %</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">Codes-barres manquants</span><b class="text-amber-600">4</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">Dernière mise à jour</span><b class="text-slate-700">11/11/2026</b></div>
+        </div>
+        <button type="button" class="btn-secondary mt-4 h-8 w-full text-xs" @click="window.showToast('Contrôle de cohérence lancé (démo).')"><svg class="icon-sm"><use href="#i-refresh"></use></svg> Lancer un contrôle</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Stock &amp; lots — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ tab: 'lots' }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+        Pharmacie centrale
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Stock &amp; lots</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Surveillance des quantités, des lots et des mouvements de stock.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Export du stock préparé (démo).')">
+        <svg class="icon-sm"><use href="#i-download"></use></svg>
+        Exporter
+      </button>
+      <a href="{% url 'reception_lot' %}" class="btn-primary">
+        <svg class="icon-sm"><use href="#i-plus"></use></svg>
+        Réceptionner un lot
+      </a>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card card-hover p-4 animate-fade-up">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Valeur du stock</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><svg class="icon-sm"><use href="#i-coins"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.value }}</p>
+      <p class="mt-1 text-[11px] text-slate-400">valorisation au prix d'achat</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 60ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Sous le seuil</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-600"><svg class="icon-sm"><use href="#i-alert"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.under_threshold }} <span class="text-xs font-semibold text-slate-400">produits</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">réapprovisionnement à planifier</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 120ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Lots surveillés</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600"><svg class="icon-sm"><use href="#i-eye"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.watched }} <span class="text-xs font-semibold text-slate-400">lots</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">péremption sous 90 jours</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 180ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Lots périmés</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><svg class="icon-sm"><use href="#i-ban"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ stats.expired }} <span class="text-xs font-semibold text-slate-400">bloqués</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">destruction à organiser</p>
+    </div>
+  </div>
+
+  <div class="card overflow-hidden animate-fade-up">
+    <div class="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-3 pt-3 sm:px-4">
+      <button type="button" @click="tab = 'lots'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'lots' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">
+        Lots <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'lots' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ lot_count }}</span>
+      </button>
+      <button type="button" @click="tab = 'produits'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'produits' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">
+        Produits <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'produits' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ stats.products }}</span>
+      </button>
+      <button type="button" @click="tab = 'mouvements'" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition" :class="tab === 'mouvements' ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'">
+        Mouvements <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular" :class="tab === 'mouvements' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'">{{ stats.movements }}</span>
+      </button>
+    </div>
+
+    <div x-show="tab === 'lots'" x-transition.opacity>
+      <div class="border-b border-slate-100 px-4 py-3">
+        <form method="get" action="{% url 'stock_lots' %}" class="flex flex-col gap-2 lg:flex-row lg:items-center">
+          <div class="relative min-w-0 flex-1">
+            <svg class="field-icon"><use href="#i-search"></use></svg>
+            <input type="search" name="q" value="{{ query }}" class="field h-10 pl-10" placeholder="Rechercher un lot, un produit, un code…">
+          </div>
+          <select name="category" class="field h-10 lg:w-44">
+            <option value="">Toutes catégories</option>
+            {% for category in categories %}<option value="{{ category }}" {% if active_category == category %}selected{% endif %}>{{ category }}</option>{% endfor %}
+          </select>
+          <select name="status" class="field h-10 lg:w-40">
+            <option value="">Tous les statuts</option>
+            <option value="disponible" {% if active_status == 'disponible' %}selected{% endif %}>Disponible</option>
+            <option value="perime" {% if active_status == 'perime' %}selected{% endif %}>Périmé</option>
+            <option value="quarantaine" {% if active_status == 'quarantaine' %}selected{% endif %}>Quarantaine</option>
+            <option value="retire" {% if active_status == 'retire' %}selected{% endif %}>Retiré</option>
+          </select>
+          <select name="expiry" class="field h-10 lg:w-40">
+            <option value="">Toutes échéances</option>
+            <option value="30" {% if active_expiry == '30' %}selected{% endif %}>≤ 30 jours</option>
+            <option value="90" {% if active_expiry == '90' %}selected{% endif %}>≤ 90 jours</option>
+            <option value="expired" {% if active_expiry == 'expired' %}selected{% endif %}>Périmés</option>
+          </select>
+          <button type="submit" class="btn-secondary h-10 px-3 text-xs"><svg class="icon-sm"><use href="#i-filter"></use></svg> Filtrer</button>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto scrollbar-thin">
+        <table class="w-full min-w-[1000px]">
+          <thead class="bg-slate-50/70">
+            <tr>
+              <th class="table-th">Produit</th>
+              <th class="table-th">Lot</th>
+              <th class="table-th">Emplacement</th>
+              <th class="table-th text-center">Quantité</th>
+              <th class="table-th">Péremption</th>
+              <th class="table-th">Statut</th>
+              <th class="table-th text-right">Valeur</th>
+              <th class="table-th text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lot in lots %}
+              <tr class="table-row">
+                <td class="table-td">
+                  <p class="max-w-[210px] truncate font-bold text-slate-800">{{ lot.product }}</p>
+                  <p class="mt-0.5 text-[10px] text-slate-400">{{ lot.code }} · {{ lot.form }} · {{ lot.supplier }}</p>
+                </td>
+                <td class="table-td"><span class="rounded-md bg-brand-50 px-2 py-1 text-[10px] font-bold text-brand-700 ring-1 ring-inset ring-brand-200/70">{{ lot.lot }}</span></td>
+                <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">{{ lot.location }}</span></td>
+                <td class="table-td text-center"><b class="text-slate-800 tabular">{{ lot.qty }}</b><span class="ml-1 text-[10px] text-slate-400">u.</span></td>
+                <td class="table-td">
+                  <p class="font-semibold text-slate-700">{{ lot.expiry }}</p>
+                  <span class="mt-1 inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold ring-1 ring-inset {{ lot.expiry_tone_meta.badge }}">{{ lot.days }}</span>
+                </td>
+                <td class="table-td"><span class="badge {{ lot.status_tone.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ lot.status_tone.dot }}"></span>{{ lot.status_label }}</span></td>
+                <td class="table-td text-right font-semibold text-slate-700 tabular">{{ lot.value|fcfa }}</td>
+                <td class="table-td text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <a href="{% url 'tracabilite' %}?q={{ lot.lot }}" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-700" title="Traçabilité">
+                      <svg class="icon-sm"><use href="#i-trace"></use></svg>
+                    </a>
+                    {% if lot.status == 'disponible' %}
+                      <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-amber-50 hover:text-amber-700" title="Mettre en quarantaine" @click="window.showToast('{{ lot.lot }} placé en quarantaine (démo).', 'error')">
+                        <svg class="icon-sm"><use href="#i-lock"></use></svg>
+                      </button>
+                    {% else %}
+                      <span class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg text-slate-300" title="Action indisponible"><svg class="icon-sm"><use href="#i-ban"></use></svg></span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="px-5 py-14 text-center text-sm text-slate-500">Aucun lot ne correspond à ces critères.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-2 text-[10px] text-slate-500">
+          <svg class="h-3.5 w-3.5 text-brand-600"><use href="#i-package-check"></use></svg>
+          Les lots périmés, en quarantaine ou retirés sont exclus des propositions de préparation.
+        </div>
+        <p class="text-[11px] font-medium text-slate-400">{{ total_lots }} lot{{ total_lots|pluralize }} affiché{{ total_lots|pluralize }} · {{ lot_count }} au total</p>
+      </div>
+    </div>
+
+    <div x-show="tab === 'produits'" x-transition.opacity style="display: none">
+      <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <p class="text-xs font-semibold text-slate-500">{{ stats.products }} références actives</p>
+        <button type="button" class="btn-ghost h-8 px-2.5 text-xs" @click="window.showToast('Création de produit ouverte (démo).')"><svg class="icon-sm"><use href="#i-plus"></use></svg> Nouveau produit</button>
+      </div>
+      <div class="overflow-x-auto scrollbar-thin">
+        <table class="w-full min-w-[860px]">
+          <thead class="bg-slate-50/70">
+            <tr>
+              <th class="table-th">Produit</th>
+              <th class="table-th">Catégorie</th>
+              <th class="table-th text-center">Stock</th>
+              <th class="table-th text-center">Seuil</th>
+              <th class="table-th">Niveau</th>
+              <th class="table-th">Statut</th>
+              <th class="table-th text-right">Prix unitaire</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+              <tr class="table-row">
+                <td class="table-td">
+                  <p class="font-bold text-slate-800">{{ product.name }}</p>
+                  <p class="mt-0.5 text-[10px] text-slate-400">{{ product.code }} · {{ product.form }}</p>
+                </td>
+                <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{{ product.category }}</span></td>
+                <td class="table-td text-center font-bold text-slate-800 tabular">{{ product.stock }}</td>
+                <td class="table-td text-center text-slate-500 tabular">{{ product.threshold }}</td>
+                <td class="table-td">
+                  {% widthratio product.stock product.threshold 100 as pct %}
+                  <div class="flex items-center gap-2">
+                    <div class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
+                      <div class="h-full rounded-full {% if product.status == 'ok' %}bg-emerald-500{% elif product.status == 'low' %}bg-amber-500{% else %}bg-rose-500{% endif %}" style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%"></div>
+                    </div>
+                    <span class="text-[10px] font-semibold text-slate-400 tabular">{{ pct }}%</span>
+                  </div>
+                </td>
+                <td class="table-td">
+                  {% if product.status == 'ok' %}
+                    <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Disponible</span>
+                  {% elif product.status == 'low' %}
+                    <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Sous le seuil</span>
+                  {% else %}
+                    <span class="badge bg-rose-50 text-rose-700 ring-rose-200/70"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>Critique</span>
+                  {% endif %}
+                </td>
+                <td class="table-td text-right font-semibold text-slate-700 tabular">{{ product.price|fcfa }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] font-medium text-slate-400">Le stock disponible exclut les lots périmés, en quarantaine, retirés ou réservés (RG-05).</div>
+    </div>
+
+    <div x-show="tab === 'mouvements'" x-transition.opacity style="display: none">
+      <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <p class="text-xs font-semibold text-slate-500">{{ stats.movements }} mouvements enregistrés · journal immuable (RG-06)</p>
+        <button type="button" class="btn-ghost h-8 px-2.5 text-xs" @click="window.showToast('Journal des mouvements exporté (démo).')"><svg class="icon-sm"><use href="#i-download"></use></svg> Exporter</button>
+      </div>
+      <div class="overflow-x-auto scrollbar-thin">
+        <table class="w-full min-w-[860px]">
+          <thead class="bg-slate-50/70">
+            <tr>
+              <th class="table-th">Date</th>
+              <th class="table-th">Type</th>
+              <th class="table-th">Lot</th>
+              <th class="table-th text-center">Quantité</th>
+              <th class="table-th">Opérateur</th>
+              <th class="table-th">Motif</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for movement in movements %}
+              <tr class="table-row">
+                <td class="table-td whitespace-nowrap text-[11px] text-slate-500">{{ movement.date }}</td>
+                <td class="table-td"><span class="badge {{ movement.tone|yesno:'bg-sky-50 text-sky-700 ring-sky-200/70,bg-slate-100 text-slate-600 ring-slate-200' }}">{{ movement.type }}</span></td>
+                <td class="table-td"><a href="{% url 'tracabilite' %}?q={{ movement.lot }}" class="text-[11px] font-bold text-brand-700 hover:text-brand-800">{{ movement.lot }}</a></td>
+                <td class="table-td text-center font-extrabold tabular {% if movement.qty.0 == '+' %}text-emerald-600{% else %}text-rose-600{% endif %}">{{ movement.qty }}</td>
+                <td class="table-td">{{ movement.user }}</td>
+                <td class="table-td text-[11px] text-slate-500">{{ movement.reason }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3 text-[11px] font-medium text-slate-400">Chaque mouvement est horodaté et ne peut plus être modifié ni supprimé.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

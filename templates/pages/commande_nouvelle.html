@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Nouvelle commande — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <a href="{% url 'commandes' %}" class="transition hover:text-brand-700">Commandes</a>
+        <svg class="icon-sm h-3 w-3"><use href="#i-chevron-right"></use></svg>
+        <span class="text-slate-600">Nouvelle commande</span>
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Nouvelle commande</h1>
+      <p class="mt-1.5 text-sm text-slate-500">Sélectionnez le client et les produits, puis vérifiez la disponibilité avant validation.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <a href="{% url 'commandes' %}" class="btn-secondary">Annuler</a>
+      <button type="button" class="btn-secondary" @click="window.showToast('Commande enregistrée en brouillon (démo).')">
+        <svg class="icon-sm"><use href="#i-save"></use></svg>
+        Brouillon
+      </button>
+      <button type="button" class="btn-primary" @click="window.showToast('Commande validée. Préparation planifiée (démo).'); setTimeout(() => window.location.href='{% url 'commandes' %}', 700)">
+        <svg class="icon-sm"><use href="#i-check"></use></svg>
+        Valider la commande
+      </button>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-3 animate-fade-up">
+    <div class="card p-3.5">
+      <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-slate-400"><span class="grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-[10px] text-white">1</span>Client</div>
+      <p class="mt-1.5 text-sm font-extrabold text-slate-800">{{ draft.client }}</p>
+      <p class="text-[10px] text-slate-400">{{ draft.client_code }} · {{ draft.city }}</p>
+    </div>
+    <div class="card p-3.5">
+      <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-brand-700"><span class="grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-[10px] text-white">2</span>Produits</div>
+      <p class="mt-1.5 text-sm font-extrabold text-slate-800">{{ draft.lines_count }} lignes · {{ draft.units }} unités</p>
+      <p class="text-[10px] text-slate-400">Prix et stock vérifiés en temps réel</p>
+    </div>
+    <div class="card p-3.5">
+      <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-slate-400"><span class="grid h-5 w-5 place-items-center rounded-full border-2 border-slate-200 text-[10px] font-extrabold text-slate-400">3</span>Validation</div>
+      <p class="mt-1.5 text-sm font-extrabold text-slate-400">Contrôle final</p>
+      <p class="text-[10px] text-slate-400">Disponibilité et crédit client</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Client</h2>
+            <p class="mt-0.5 text-xs text-slate-500">La fiche client est vérifiée avant validation.</p>
+          </div>
+          <button type="button" class="btn-ghost h-8 px-2.5 text-xs" @click="window.showToast('Recherche client ouverte (démo).')"><svg class="icon-sm"><use href="#i-search"></use></svg> Changer</button>
+        </div>
+        <div class="mt-4 flex flex-col gap-4 rounded-xl border border-brand-200 bg-brand-50/50 p-4 sm:flex-row sm:items-center">
+          <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white text-sm font-extrabold text-brand-700 shadow-sm ring-1 ring-brand-100">PP</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="text-sm font-extrabold text-slate-900">{{ draft.client }}</p>
+              <span class="badge bg-white text-brand-700 ring-brand-200/70">{{ draft.client_type }}</span>
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500">{{ draft.client_code }} · {{ draft.city }} · {{ draft.phone }}</p>
+            <p class="mt-0.5 text-[10px] text-slate-400">{{ draft.orders_count }} commandes précédentes · encours autorisé 2 500 000 FCFA</p>
+          </div>
+          <div class="shrink-0 text-left sm:text-right">
+            <p class="text-[10px] text-slate-400">Date de commande</p>
+            <p class="text-xs font-bold text-slate-700">{{ today }}</p>
+          </div>
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="label" for="client">Client *</label>
+            <select id="client" class="field">
+              {% for client in clients %}<option {% if client == draft.client %}selected{% endif %}>{{ client }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="label" for="reference">Référence client</label>
+            <input id="reference" class="field" value="{{ draft.client_code }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="flex flex-col gap-2 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Produits de la commande</h2>
+            <p class="mt-0.5 text-xs text-slate-500">{{ draft.lines_count }} lignes · {{ draft.units }} unités demandées</p>
+          </div>
+          <button type="button" class="btn-secondary h-8 self-start px-2.5 text-xs" @click="window.showToast('Recherche produit ouverte (démo).')"><svg class="icon-sm"><use href="#i-plus"></use></svg> Ajouter une ligne</button>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full min-w-[780px]">
+            <thead class="bg-slate-50/70">
+              <tr><th class="table-th">Produit</th><th class="table-th text-center">Stock</th><th class="table-th text-center">Quantité</th><th class="table-th text-right">Prix unitaire</th><th class="table-th text-right">Total</th><th class="table-th">Disponibilité</th><th class="table-th w-8"></th></tr>
+            </thead>
+            <tbody>
+              {% for line in draft.lines %}
+                <tr class="table-row">
+                  <td class="table-td">
+                    <p class="font-bold text-slate-800">{{ line.product }}</p>
+                    <p class="mt-0.5 text-[10px] text-slate-400">{{ line.code }} · {{ line.form }}</p>
+                  </td>
+                  <td class="table-td text-center">
+                    <span class="font-bold tabular {% if line.stock < line.qty %}text-amber-600{% else %}text-slate-700{% endif %}">{{ line.stock }}</span>
+                  </td>
+                  <td class="table-td text-center">
+                    <div class="inline-flex items-center rounded-lg border border-slate-200">
+                      <button type="button" class="grid h-7 w-7 place-items-center text-slate-400 hover:text-slate-700" @click="window.showToast('Quantité ajustée (démo).')">−</button>
+                      <input type="number" value="{{ line.qty }}" class="h-7 w-12 border-x border-slate-200 text-center text-xs font-bold tabular focus:outline-none">
+                      <button type="button" class="grid h-7 w-7 place-items-center text-slate-400 hover:text-slate-700" @click="window.showToast('Quantité ajustée (démo).')">+</button>
+                    </div>
+                  </td>
+                  <td class="table-td text-right text-slate-600 tabular">{{ line.price|fcfa }}</td>
+                  <td class="table-td text-right font-bold text-slate-800 tabular">{{ line.total|fcfa }}</td>
+                  <td class="table-td">
+                    {% if line.status == 'ok' %}
+                      <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Disponible</span>
+                    {% else %}
+                      <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Partiel</span>
+                    {% endif %}
+                  </td>
+                  <td class="table-td text-right"><button type="button" class="grid h-7 w-7 place-items-center rounded-md text-slate-300 transition hover:bg-rose-50 hover:text-rose-600" title="Retirer la ligne" @click="window.showToast('Ligne retirée (démo).', 'error')"><svg class="icon-sm"><use href="#i-trash"></use></svg></button></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="border-t border-slate-100 bg-slate-50/60 p-4">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div class="flex-1">
+              <label class="label text-[10px]" for="add-product">Ajout rapide</label>
+              <select id="add-product" class="field h-9 text-xs">
+                {% for product in products %}<option>{{ product.name }} · {{ product.code }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="w-full sm:w-28">
+              <label class="label text-[10px]" for="add-qty">Quantité</label>
+              <input id="add-qty" type="number" min="1" value="1" class="field h-9 text-xs tabular">
+            </div>
+            <button type="button" class="btn-primary h-9 px-3 text-xs" @click="window.showToast('Produit ajouté à la commande (démo).')"><svg class="icon-sm"><use href="#i-plus"></use></svg> Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-5 text-amber-800 animate-fade-up">
+        <svg class="icon-sm mt-0.5 shrink-0"><use href="#i-alert"></use></svg>
+        <p><b>Approvisionnement partiel.</b> Amoxicilline 500 mg : 98 unités disponibles pour 120 demandées. Le reliquat de 22 unités sera conservé sur la commande.</p>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Récapitulatif</h2>
+        <div class="mt-4 space-y-2.5 border-b border-slate-100 pb-4 text-xs">
+          <div class="flex items-center justify-between"><span class="text-slate-500">Sous-total ({{ draft.units }} unités)</span><b class="text-slate-800 tabular">{{ draft.subtotal|fcfa }}</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">Remise</span><b class="text-slate-800 tabular">{{ draft.discount|fcfa }}</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">TVA (0 %)</span><b class="text-slate-800 tabular">{{ draft.vat|fcfa }}</b></div>
+        </div>
+        <div class="mt-4 flex items-end justify-between">
+          <span class="text-xs font-semibold text-slate-500">Total TTC</span>
+          <span class="text-xl font-extrabold tracking-tight text-slate-900 tabular">{{ draft.total|fcfa }}</span>
+        </div>
+        <div class="mt-3 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-2 text-[10px] font-semibold text-emerald-700"><svg class="h-3.5 w-3.5"><use href="#i-check-circle"></use></svg> Crédit client disponible</div>
+        <button type="button" class="btn-primary mt-4 w-full" @click="window.showToast('Commande validée. Préparation planifiée (démo).'); setTimeout(() => window.location.href='{% url 'commandes' %}', 700)">
+          <svg class="icon-sm"><use href="#i-check"></use></svg>
+          Valider la commande
+        </button>
+        <p class="mt-2 text-center text-[10px] text-slate-400">La validation génère le bon de préparation FEFO.</p>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Lots FEFO proposés</h2>
+          <span class="badge bg-brand-50 text-brand-700 ring-brand-200/70">FEFO</span>
+        </div>
+        <div class="mt-3 space-y-2.5">
+          <div class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-2.5">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"><svg class="icon-sm"><use href="#i-box"></use></svg></span>
+            <div class="min-w-0 flex-1"><p class="text-[10px] font-bold text-slate-700">LOT-2026-A184</p><p class="text-[9px] text-slate-400">Doliprane · exp. 23/11/2026</p></div>
+            <span class="text-[10px] font-bold text-slate-600 tabular">60 u.</span>
+          </div>
+          <div class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-2.5">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"><svg class="icon-sm"><use href="#i-box"></use></svg></span>
+            <div class="min-w-0 flex-1"><p class="text-[10px] font-bold text-slate-700">LOT-2026-C041</p><p class="text-[9px] text-slate-400">Amoxicilline · exp. 28/12/2026</p></div>
+            <span class="text-[10px] font-bold text-amber-600 tabular">98 u.</span>
+          </div>
+          <div class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-2.5">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"><svg class="icon-sm"><use href="#i-box"></use></svg></span>
+            <div class="min-w-0 flex-1"><p class="text-[10px] font-bold text-slate-700">LOT-2027-D008</p><p class="text-[9px] text-slate-400">Oméprazole · exp. 04/2027</p></div>
+            <span class="text-[10px] font-bold text-slate-600 tabular">40 u.</span>
+          </div>
+        </div>
+        <p class="mt-3 text-[10px] leading-5 text-slate-400">Les lots périmés, en quarantaine ou retirés sont exclus automatiquement.</p>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Après validation</h2>
+        <div class="mt-3 space-y-3">
+          <div class="flex items-start gap-2.5"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">1</span><p class="text-[11px] leading-5 text-slate-500">Le bon de préparation est généré automatiquement.</p></div>
+          <div class="flex items-start gap-2.5"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">2</span><p class="text-[11px] leading-5 text-slate-500">Le magasinier prépare les produits selon FEFO.</p></div>
+          <div class="flex items-start gap-2.5"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">3</span><p class="text-[11px] leading-5 text-slate-500">La livraison peut être planifiée après contrôle.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

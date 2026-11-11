@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Préparation {{ prep.reference }} — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ picked: [true, true, true, false] }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+        <a href="{% url 'commandes' %}" class="transition hover:text-brand-700">Commandes</a>
+        <svg class="icon-sm h-3 w-3"><use href="#i-chevron-right"></use></svg>
+        <span class="text-slate-600">Préparation</span>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Préparation · {{ prep.reference }}</h1>
+        <span class="badge bg-sky-50 text-sky-700 ring-sky-200/70"><span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>En préparation</span>
+      </div>
+      <p class="mt-1.5 text-sm text-slate-500">Bon {{ prep.bon }} · {{ prep.client }} · {{ prep.lines|length }} lignes · magasinier {{ prep.magasinier }}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Bon de préparation envoyé à l\'impression (démo).')">
+        <svg class="icon-sm"><use href="#i-printer"></use></svg>
+        Imprimer le bon
+      </button>
+      <button type="button" class="btn-primary" @click="window.showToast('Préparation confirmée. Bon de livraison généré (démo).')">
+        <svg class="icon-sm"><use href="#i-check"></use></svg>
+        Confirmer la préparation
+      </button>
+    </div>
+  </div>
+
+  <div class="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-xs leading-5 text-brand-900 animate-fade-up">
+    <svg class="icon-sm mt-0.5 shrink-0 text-brand-700"><use href="#i-package-check"></use></svg>
+    <p><b>Prélèvement FEFO appliqué.</b> Les lots sont proposés par date de péremption croissante. Les lots périmés, en quarantaine ou retirés sont automatiquement exclus (RG-01, RG-02, RG-05).</p>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="flex flex-col gap-2 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Lignes à prélever</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Contrôlez la quantité et le lot physique avant validation.</p>
+          </div>
+          <span class="badge self-start bg-white text-slate-600 ring-slate-200">{{ prep.lines_done }} / {{ prep.lines_total }} lignes</span>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full min-w-[920px]">
+            <thead class="bg-slate-50/70">
+              <tr>
+                <th class="table-th w-8"></th>
+                <th class="table-th">Produit</th>
+                <th class="table-th text-center">Qté</th>
+                <th class="table-th">Lot proposé (FEFO)</th>
+                <th class="table-th">Empl.</th>
+                <th class="table-th text-center">À prélever</th>
+                <th class="table-th">Contrôle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in prep.lines %}
+                <tr class="table-row">
+                  <td class="table-td">
+                    <input type="checkbox" x-model="picked[{{ forloop.counter0 }}]" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" aria-label="Sélectionner {{ line.product }}">
+                  </td>
+                  <td class="table-td">
+                    <p class="font-bold text-slate-800">{{ line.product }}</p>
+                    <p class="mt-0.5 text-[11px] text-slate-400">{{ line.code }} · {{ line.form }}</p>
+                  </td>
+                  <td class="table-td text-center"><b class="text-slate-800 tabular">{{ line.qty }}</b></td>
+                  <td class="table-td">
+                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700 ring-1 ring-inset ring-brand-200/70">
+                      <svg class="h-3.5 w-3.5"><use href="#i-box"></use></svg>
+                      {{ line.lot }}
+                    </span>
+                    <div class="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400">
+                      exp. {{ line.expiry }}
+                      <span class="rounded px-1 py-0.5 text-[9px] font-bold ring-1 ring-inset {{ line.tone_meta.badge }}">{{ line.days }}</span>
+                    </div>
+                  </td>
+                  <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">{{ line.location }}</span></td>
+                  <td class="table-td text-center">
+                    <input type="number" min="0" max="{{ line.qty }}" value="{{ line.picked }}" class="field h-8 w-16 px-1 text-center text-xs tabular" aria-label="Quantité prélevée pour {{ line.product }}">
+                  </td>
+                  <td class="table-td">
+                    {% if line.checked %}
+                      <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Scanné</span>
+                    {% else %}
+                      <span class="badge bg-slate-100 text-slate-500 ring-slate-200"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>À faire</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-5 py-3">
+          <span class="text-[11px] font-medium text-slate-400">{{ prep.units_done }} / {{ prep.units_total }} unités préparées</span>
+          <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70">Reliquat {{ prep.shortage.product }} : {{ prep.shortage.qty }}</span>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Contrôle final</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Vérifications obligatoires avant génération du bon de livraison.</p>
+          </div>
+          <span class="badge bg-white text-slate-600 ring-slate-200">F-29</span>
+        </div>
+        <div class="mt-4 grid gap-2.5 sm:grid-cols-2">
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Quantités prélevées conformes à la commande
+          </label>
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Lots conformes et respect de la règle FEFO
+          </label>
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" checked class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Étiquettes et conditionnements intacts
+          </label>
+          <label class="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 transition hover:bg-slate-50">
+            <input type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            Contrôle du pharmacien requis
+          </label>
+        </div>
+        <div class="mt-4">
+          <label class="label" for="remarques">Remarques de préparation</label>
+          <textarea id="remarques" rows="3" class="field resize-none" placeholder="Ajouter une remarque (facultatif)…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Progression</h2>
+          <span class="badge bg-sky-50 text-sky-700 ring-sky-200/70">{{ prep.progress }} %</span>
+        </div>
+        <div class="mt-4 progress-track"><div class="progress-fill" style="width: {{ prep.progress }}%"></div></div>
+        <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+          <span>{{ prep.lines_done }} lignes sur {{ prep.lines_total }}</span>
+          <span class="tabular">{{ prep.units_done }} / {{ prep.units_total }} unités</span>
+        </div>
+        <div class="mt-4 space-y-2.5 border-t border-slate-100 pt-4 text-xs">
+          <div class="flex items-center justify-between"><span class="text-slate-500">Démarrée à</span><b class="text-slate-700">{{ prep.started }}</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">Temps écoulé</span><b class="text-slate-700">{{ prep.elapsed }}</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">Magasinier</span><b class="text-slate-700">{{ prep.magasinier }}</b></div>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Lots prélevés</h2>
+          <span class="badge bg-brand-50 text-brand-700 ring-brand-200/70"><span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>FEFO</span>
+        </div>
+        <div class="mt-3 divide-y divide-slate-100">
+          {% for item in prep.lots_prepared %}
+            <div class="flex items-center gap-3 py-3">
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"><svg class="icon-sm"><use href="#i-box"></use></svg></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] font-bold text-slate-800">{{ item.lot }}</p>
+                <p class="text-[10px] text-slate-400">{{ item.product }} · exp. {{ item.expiry }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs font-extrabold text-slate-800 tabular">{{ item.qty }}</p>
+                <p class="text-[9px] text-slate-400">unités</p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Reliquat à planifier</h2>
+        <div class="mt-3 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-5 text-amber-800">
+          <svg class="icon-sm mt-0.5 shrink-0"><use href="#i-alert"></use></svg>
+          <p><b>{{ prep.shortage.product }}</b><br>{{ prep.shortage.qty }} unités non servies. Le reliquat sera conservé sur la ligne de commande.</p>
+        </div>
+        <div class="mt-4 space-y-2.5 border-t border-slate-100 pt-4 text-xs">
+          <div class="flex items-center justify-between"><span class="text-slate-500">Lignes servies</span><b class="text-slate-700">{{ prep.lines_done }} / {{ prep.lines_total }}</b></div>
+          <div class="flex items-center justify-between"><span class="text-slate-500">Unités servies</span><b class="text-slate-700 tabular">{{ prep.units_done }} / {{ prep.units_total }}</b></div>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Actions</h2>
+        <div class="mt-3 space-y-2">
+          <button type="button" class="btn-primary w-full" @click="window.showToast('Préparation confirmée. Bon de livraison généré (démo).')">
+            <svg class="icon-sm"><use href="#i-check"></use></svg>
+            Confirmer et générer le BL
+          </button>
+          <button type="button" class="btn-secondary w-full" @click="window.showToast('Bon de préparation envoyé à l\'impression (démo).')">
+            <svg class="icon-sm"><use href="#i-printer"></use></svg>
+            Imprimer le bon
+          </button>
+          <button type="button" class="btn-ghost w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700" @click="window.showToast('Manque signalé au responsable magasin (démo).', 'error')">
+            <svg class="icon-sm"><use href="#i-alert"></use></svg>
+            Signaler un manque
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

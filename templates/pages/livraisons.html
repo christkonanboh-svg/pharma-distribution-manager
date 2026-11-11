@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Livraisons — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+        Logistique
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Livraisons</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Bons de livraison, tournées et suivi des statuts en temps réel.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Export des livraisons préparé (démo).')">
+        <svg class="icon-sm"><use href="#i-download"></use></svg>
+        Exporter
+      </button>
+      <button type="button" class="btn-primary" @click="window.showToast('Nouvelle tournée planifiée pour demain (démo).')">
+        <svg class="icon-sm"><use href="#i-map-pin"></use></svg>
+        Planifier une tournée
+      </button>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card card-hover p-4 animate-fade-up">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">En cours</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600"><svg class="icon-sm"><use href="#i-truck"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ delivery_counts.encours }} <span class="text-xs font-semibold text-slate-400">livraisons</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">sur la tournée du jour</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 60ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Livrées aujourd'hui</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><svg class="icon-sm"><use href="#i-check-circle"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ delivery_counts.livree }} <span class="text-xs font-semibold text-slate-400">bons</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">confirmés par les clients</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 120ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">En attente</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-600"><svg class="icon-sm"><use href="#i-clock"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ delivery_counts.attente }} <span class="text-xs font-semibold text-slate-400">à charger</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">prêts au départ</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 180ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Retours</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><svg class="icon-sm"><use href="#i-refresh"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ delivery_counts.retournee }} <span class="text-xs font-semibold text-slate-400">à traiter</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">litige ou refus client</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="xl:col-span-8">
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-3 pt-3 sm:px-4">
+          {% for tab in delivery_tabs %}
+            <a href="?status={{ tab.value }}" class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition {% if active_status == tab.value %}border-brand-500 text-brand-700{% else %}border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %}">
+              {{ tab.label }}
+              <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular {% if active_status == tab.value %}bg-brand-50 text-brand-700{% else %}bg-slate-100 text-slate-500{% endif %}">{{ tab.count }}</span>
+            </a>
+          {% endfor %}
+        </div>
+
+        <div class="border-b border-slate-100 px-4 py-3">
+          <form method="get" action="{% url 'livraisons' %}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input type="hidden" name="status" value="{{ active_status }}">
+            <div class="relative min-w-0 flex-1">
+              <svg class="field-icon"><use href="#i-search"></use></svg>
+              <input type="search" name="q" value="{{ query }}" class="field h-10 pl-10" placeholder="N° de bon, client…">
+            </div>
+            <select name="zone" class="field h-10 sm:w-36">
+              <option value="">Toutes les zones</option>
+              {% for zone in zones %}<option value="{{ zone }}" {% if active_zone == zone %}selected{% endif %}>{{ zone }}</option>{% endfor %}
+            </select>
+            <select name="driver" class="field h-10 sm:w-40">
+              <option value="">Tous les livreurs</option>
+              {% for driver in drivers %}<option value="{{ driver }}" {% if active_driver == driver %}selected{% endif %}>{{ driver }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="btn-secondary h-10 px-3 text-xs">
+              <svg class="icon-sm"><use href="#i-filter"></use></svg>
+              Filtrer
+            </button>
+          </form>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-thin">
+          <table class="w-full min-w-[920px]">
+            <thead class="bg-slate-50/70">
+              <tr>
+                <th class="table-th">N° BL</th>
+                <th class="table-th">Commande</th>
+                <th class="table-th">Client</th>
+                <th class="table-th">Zone</th>
+                <th class="table-th">Livreur</th>
+                <th class="table-th">Statut</th>
+                <th class="table-th text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for delivery in deliveries %}
+                <tr class="table-row group">
+                  <td class="table-td">
+                    <a href="{% url 'commande_page' delivery.order_id %}" class="font-bold text-slate-800 transition hover:text-brand-700">{{ delivery.reference }}</a>
+                    <p class="mt-0.5 text-[10px] text-slate-400">{{ delivery.date }} · {{ delivery.time }}</p>
+                  </td>
+                  <td class="table-td"><span class="font-semibold text-slate-600">{{ delivery.order }}</span></td>
+                  <td class="table-td">
+                    <div class="flex items-center gap-2.5">
+                      <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">{{ delivery.initials }}</span>
+                      <div>
+                        <p class="max-w-[190px] truncate font-semibold text-slate-700">{{ delivery.client }}</p>
+                        <p class="text-[10px] text-slate-400">{{ delivery.client_type }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="table-td"><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">{{ delivery.zone }}</span></td>
+                  <td class="table-td">{{ delivery.driver }}</td>
+                  <td class="table-td"><span class="badge {{ delivery.tone_meta.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ delivery.tone_meta.dot }}"></span>{{ delivery.status_label }}</span></td>
+                  <td class="table-td text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      <a href="{% url 'commande_page' delivery.order_id %}" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-700" title="Voir la commande">
+                        <svg class="icon-sm"><use href="#i-eye"></use></svg>
+                      </a>
+                      <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" title="Imprimer le bon" @click="window.showToast('Bon {{ delivery.reference }} envoyé à l\'impression (démo).')">
+                        <svg class="icon-sm"><use href="#i-printer"></use></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="7" class="px-5 py-14 text-center text-sm text-slate-500">Aucune livraison ne correspond à ces filtres.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-[11px] font-medium text-slate-400">{{ total_deliveries }} livraison{{ total_deliveries|pluralize }} affichée{{ total_deliveries|pluralize }}</p>
+          <div class="flex items-center gap-1">
+            <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled><svg class="icon-sm"><use href="#i-arrow-left"></use></svg></button>
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-slate-900 text-xs font-bold text-white">1</span>
+            <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled><svg class="icon-sm"><use href="#i-chevron-right"></use></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Tournée du jour</h2>
+            <p class="mt-0.5 text-[11px] text-slate-500">{{ tour.driver }} · {{ tour.vehicle }}</p>
+          </div>
+          <span class="badge bg-sky-50 text-sky-700 ring-sky-200/70">{{ tour.done }} / {{ tour.total }}</span>
+        </div>
+        <div class="mt-4 progress-track"><div class="progress-fill" style="width: {{ tour.progress }}%"></div></div>
+        <div class="mt-2 flex items-center justify-between text-[10px] text-slate-400">
+          <span>{{ tour.zone }}</span><span>{{ tour.window }}</span>
+        </div>
+        <div class="mt-3 divide-y divide-slate-100">
+          {% for stop in tour.stops %}
+            <div class="flex items-center gap-3 py-3">
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg {{ stop.tone|yesno:'bg-sky-50 text-sky-600,bg-slate-100 text-slate-500' }}">
+                <svg class="icon-sm"><use href="#i-{{ stop.icon }}"></use></svg>
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[11px] font-bold text-slate-800">{{ stop.client }}</p>
+                <p class="text-[10px] text-slate-400">{{ stop.reference }} · {{ stop.parcels }} colis</p>
+              </div>
+              <span class="badge {% if stop.tone == 'blue' %}bg-sky-50 text-sky-700 ring-sky-200/70{% else %}bg-slate-100 text-slate-500 ring-slate-200{% endif %}">{{ stop.status }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:text-brand-800" @click="window.showToast('Tournée complète affichée (démo).')">
+          Voir la tournée complète
+          <svg class="h-3 w-3"><use href="#i-arrow-right"></use></svg>
+        </button>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Dernier bon de livraison</h2>
+          <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70">Livré</span>
+        </div>
+        <div class="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+          <div class="flex items-start justify-between gap-2 border-b border-slate-200 pb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="grid h-6 w-6 place-items-center rounded-md bg-navy-900 text-white"><svg class="h-3.5 w-3.5"><use href="#i-plus"></use></svg></span>
+              <div>
+                <p class="text-[9px] font-extrabold uppercase tracking-wide text-slate-700">Bon de livraison</p>
+                <p class="text-[8px] text-slate-400">DPCI · {{ last_delivery.reference }}</p>
+              </div>
+            </div>
+            <p class="text-right text-[8px] text-slate-400">{{ last_delivery.date }}<br>Page 1/1</p>
+          </div>
+          <div class="space-y-1.5 py-2 text-[9px]">
+            <div class="flex justify-between gap-2"><span class="text-slate-400">Client</span><b class="text-slate-700">{{ last_delivery.client }}</b></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-400">Commande</span><b class="text-slate-700">{{ last_delivery.order }}</b></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-400">Livreur</span><b class="text-slate-700">{{ last_delivery.driver }}</b></div>
+          </div>
+          <table class="w-full border-t border-slate-200 text-[8.5px]">
+            <thead><tr class="text-left text-slate-400"><th class="py-1.5">Produit</th><th>Lot</th><th class="text-right">Qté</th></tr></thead>
+            <tbody>
+              {% for product in last_delivery.products %}
+                <tr class="border-t border-slate-100"><td class="py-1.5 font-semibold text-slate-600">{{ product.name }}</td><td class="text-slate-500">{{ product.lot }}</td><td class="text-right font-bold text-slate-700">{{ product.qty }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="mt-3 flex justify-between border-t border-dashed border-slate-300 pt-2 text-[8px] text-slate-400">
+            <span>Signature magasinier</span><span>Signature client</span>
+          </div>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <button type="button" class="btn-secondary h-8 px-2.5 text-xs" @click="window.showToast('Bon de livraison envoyé à l\'impression (démo).')"><svg class="icon-sm"><use href="#i-printer"></use></svg> Imprimer</button>
+          <button type="button" class="btn-ghost h-8 px-2.5 text-xs" @click="window.showToast('PDF du bon généré (démo).')"><svg class="icon-sm"><use href="#i-download"></use></svg> PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

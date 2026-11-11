@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load dpci %}
+
+{% block title %}Traçabilité {{ lot.lot }} — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+        Sécurité pharmaceutique
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Traçabilité des lots</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Retrouvez chaque entrée, sortie et client associé à un lot, de la réception à la délivrance.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Fiche de traçabilité envoyée à l\'impression (démo).')">
+        <svg class="icon-sm"><use href="#i-printer"></use></svg>
+        Imprimer
+      </button>
+      <a href="{% url 'rappel_lot' %}" class="btn bg-rose-600 text-white shadow-sm hover:bg-rose-700">
+        <svg class="icon-sm"><use href="#i-alert"></use></svg>
+        Signaler un rappel
+      </a>
+    </div>
+  </div>
+
+  <div class="card p-4 animate-fade-up sm:p-5">
+    <form method="get" action="{% url 'tracabilite' %}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div class="relative flex-1">
+        <svg class="field-icon"><use href="#i-search"></use></svg>
+        <input type="search" name="q" value="{{ query }}" class="field h-11 pl-10 text-sm" placeholder="Rechercher un numéro de lot, un produit, un client…">
+      </div>
+      <button type="submit" class="btn-primary h-11 px-5">
+        <svg class="icon-sm"><use href="#i-trace"></use></svg>
+        Retracer le lot
+      </button>
+    </form>
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+      <span class="font-semibold text-slate-500">Suggestions :</span>
+      <a href="?q=LOT-2026-A184" class="rounded-md bg-slate-100 px-2 py-1 font-bold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700">LOT-2026-A184</a>
+      <a href="?q=LOT-2026-C041" class="rounded-md bg-slate-100 px-2 py-1 font-bold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700">LOT-2026-C041</a>
+      <a href="?q=LOT-2027-E021" class="rounded-md bg-slate-100 px-2 py-1 font-bold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700">LOT-2027-E021</a>
+    </div>
+  </div>
+
+  {% if not trace_found %}
+    <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 animate-fade-up">
+      <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700"><svg class="icon-sm"><use href="#i-alert"></use></svg></span>
+      <div>
+        <p class="text-xs font-extrabold text-amber-900">Aucun lot ne correspond à « {{ query }} »</p>
+        <p class="mt-0.5 text-[11px] leading-5 text-amber-700">Le lot le plus récent est affiché à titre indicatif. Vérifiez le numéro de lot, le produit ou le client recherché.</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card p-4 animate-fade-up">
+      <p class="text-xs font-semibold text-slate-500">Quantité reçue</p>
+      <p class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ lot.qty_received }} <span class="text-xs font-semibold text-slate-400">unités</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">le {{ lot.received }}</p>
+    </div>
+    <div class="card p-4 animate-fade-up" style="animation-delay: 60ms">
+      <p class="text-xs font-semibold text-slate-500">Quantité sortie</p>
+      <p class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ lot.qty_out }} <span class="text-xs font-semibold text-slate-400">unités</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">sur {{ movements|length }} mouvements</p>
+    </div>
+    <div class="card p-4 animate-fade-up" style="animation-delay: 120ms">
+      <p class="text-xs font-semibold text-slate-500">Stock restant</p>
+      <p class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ lot.qty_remaining }} <span class="text-xs font-semibold text-slate-400">unités</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">emplacement A-12</p>
+    </div>
+    <div class="card p-4 animate-fade-up" style="animation-delay: 180ms">
+      <p class="text-xs font-semibold text-slate-500">Clients livrés</p>
+      <p class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 tabular">{{ lot.clients_count }} <span class="text-xs font-semibold text-slate-400">clients</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">à notifier en cas de rappel</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200/70"><svg class="h-6 w-6"><use href="#i-box"></use></svg></span>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg font-extrabold tracking-tight text-slate-900">{{ lot.lot }}</h2>
+                <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70">{{ lot.days }}</span>
+              </div>
+              <p class="mt-0.5 text-xs text-slate-500">{{ lot.product }} · {{ lot.code }} · {{ lot.supplier }}</p>
+            </div>
+          </div>
+          <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>{{ lot.status }}</span>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4">
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Réception</p><p class="mt-0.5 text-xs font-bold text-slate-700">{{ lot.received }}</p></div>
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Péremption</p><p class="mt-0.5 text-xs font-bold text-slate-700">{{ lot.expiry }}</p></div>
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Fournisseur</p><p class="mt-0.5 text-xs font-bold text-slate-700">{{ lot.supplier }}</p></div>
+          <div><p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Stock restant</p><p class="mt-0.5 text-xs font-bold text-slate-700 tabular">{{ lot.qty_remaining }} u.</p></div>
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900">Historique des mouvements</h2>
+            <p class="mt-0.5 text-xs text-slate-500">Journal chronologique, immuable et horodaté.</p>
+          </div>
+          <span class="badge bg-white text-slate-600 ring-slate-200">{{ movements|length }} mouvements</span>
+        </div>
+        <div class="mt-5">
+          {% for movement in movements %}
+            <div class="flex gap-3">
+              <div class="flex flex-col items-center">
+                <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full {{ movement.tone_meta.icon }}">
+                  <svg class="icon-sm"><use href="#i-{% if movement.qty > 0 %}arrow-down-left{% else %}arrow-up-right{% endif %}"></use></svg>
+                </span>
+                {% if not forloop.last %}<span class="my-1 w-px flex-1 bg-slate-200"></span>{% endif %}
+              </div>
+              <div class="min-w-0 flex-1 pb-5 {% if forloop.last %}pb-0{% endif %}">
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-xs font-bold text-slate-800">{{ movement.title }}</p>
+                  <span class="badge {{ movement.tone_meta.badge }}">{{ movement.type }}</span>
+                </div>
+                <p class="mt-1 text-[11px] leading-5 text-slate-500">{{ movement.detail }}</p>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                  <span class="flex items-center gap-1"><svg class="h-3 w-3"><use href="#i-clock"></use></svg>{{ movement.time }}</span>
+                  <span class="rounded bg-slate-100 px-1.5 py-0.5 font-semibold">{{ movement.ref }}</span>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <div>
+            <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Clients concernés</h2>
+            <p class="mt-0.5 text-[10px] text-slate-400">{{ lot.clients_count }} destinataires · {{ lot.qty_out }} unités</p>
+          </div>
+          <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" title="Exporter la liste" @click="window.showToast('Liste des clients exportée (démo).')"><svg class="icon-sm"><use href="#i-download"></use></svg></button>
+        </div>
+        <div class="divide-y divide-slate-100">
+          {% for client in clients %}
+            <div class="flex items-center gap-2.5 px-4 py-3">
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">{{ client.initials }}</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[11px] font-bold text-slate-800">{{ client.client }}</p>
+                <p class="text-[10px] text-slate-400">{{ client.date }} · {{ client.qty }} u. · {{ client.order }}</p>
+              </div>
+              {% if client.notified %}
+                <span class="badge bg-emerald-50 text-emerald-700 ring-emerald-200/70">Notifié</span>
+              {% else %}
+                <span class="badge bg-slate-100 text-slate-500 ring-slate-200">À faire</span>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div class="px-4 py-6 text-center">
+              <p class="text-[11px] font-semibold text-slate-500">Aucun client livré pour ce lot.</p>
+              <p class="mt-0.5 text-[10px] text-slate-400">Les sorties apparaîtront ici après la première livraison.</p>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="border-t border-slate-100 bg-slate-50/60 px-4 py-3">
+          <button type="button" class="btn-secondary h-8 w-full text-xs" @click="window.showToast('Notifications préparées pour les clients non avertis (démo).')"><svg class="icon-sm"><use href="#i-bell"></use></svg> Notifier les clients</button>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-5 animate-fade-up">
+        <div class="flex items-start gap-3">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700"><svg class="icon"><use href="#i-alert"></use></svg></span>
+          <div>
+            <h2 class="text-sm font-extrabold tracking-tight text-rose-900">Rappel de lot</h2>
+            <p class="mt-1 text-[11px] leading-5 text-rose-700">Le rappel bloque immédiatement le lot et prépare la notification de {{ lot.clients_count }} clients.</p>
+          </div>
+        </div>
+        <a href="{% url 'rappel_lot' %}" class="btn mt-4 w-full bg-rose-600 text-white shadow-sm hover:bg-rose-700">
+          Lancer la procédure de rappel
+        </a>
+        <p class="mt-2 text-center text-[10px] font-semibold text-rose-600">Réservé au pharmacien responsable (RG-08)</p>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Documents liés</h2>
+        <div class="mt-3 space-y-2">
+          <a href="{% url 'stock_lots' %}" class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-700">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-slate-100"><svg class="icon-sm"><use href="#i-invoice"></use></svg></span>
+            Bon de réception BLF-2026-7420
+          </a>
+          <a href="{% url 'commande_page' 1 %}" class="flex items-center gap-2.5 rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-600 transition hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-700">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-slate-100"><svg class="icon-sm"><use href="#i-clipboard"></use></svg></span>
+            Commande CMD-2026-0152
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

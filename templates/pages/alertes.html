@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Alertes — DPCI{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ enabled: [true, true, true, false] }">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="animate-fade-up">
+      <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+        Surveillance opérationnelle
+      </div>
+      <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Alertes &amp; notifications</h1>
+      <p class="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">Péremptions, seuils de stock, quarantaines et rappels de lots réunis dans un même flux.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 animate-fade-up">
+      <button type="button" class="btn-secondary" @click="window.showToast('Toutes les alertes ont été marquées comme lues (démo).')">
+        <svg class="icon-sm"><use href="#i-check"></use></svg>
+        Tout marquer comme lu
+      </button>
+      <a href="{% url 'administration' %}" class="btn-primary">
+        <svg class="icon-sm"><use href="#i-settings"></use></svg>
+        Paramétrer les seuils
+      </a>
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card card-hover p-4 animate-fade-up">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Péremption ≤ 30 j</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-600"><svg class="icon-sm"><use href="#i-clock"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">23 <span class="text-xs font-semibold text-slate-400">lots</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">2 nécessitent une action immédiate</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 60ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Sous le seuil</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600"><svg class="icon-sm"><use href="#i-box"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">7 <span class="text-xs font-semibold text-slate-400">produits</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">4 réapprovisionnements prioritaires</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 120ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Lots bloqués</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600"><svg class="icon-sm"><use href="#i-lock"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">2 <span class="text-xs font-semibold text-slate-400">lots</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">quarantaine / rappel en cours</p>
+    </div>
+    <div class="card card-hover p-4 animate-fade-up" style="animation-delay: 180ms">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-slate-500">Ruptures</p>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-rose-50 text-rose-600"><svg class="icon-sm"><use href="#i-ban"></use></svg></span>
+      </div>
+      <p class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 tabular">3 <span class="text-xs font-semibold text-slate-400">produits</span></p>
+      <p class="mt-1 text-[11px] text-slate-400">commandes en attente impactées</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-12">
+    <div class="space-y-5 xl:col-span-8">
+      <div class="card overflow-hidden animate-fade-up">
+        <div class="no-scrollbar flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-3 pt-3 sm:px-4">
+          {% for tab in alert_tabs %}
+            <a
+              href="?category={{ tab.value }}{% if query %}&q={{ query }}{% endif %}"
+              class="flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2.5 text-xs font-bold transition
+                {% if active_category == tab.value %}border-brand-500 text-brand-700{% else %}border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800{% endif %}"
+            >
+              {{ tab.label }}
+              <span class="rounded-md px-1.5 py-0.5 text-[10px] tabular {% if active_category == tab.value %}bg-brand-50 text-brand-700{% else %}bg-slate-100 text-slate-500{% endif %}">{{ tab.count }}</span>
+            </a>
+          {% endfor %}
+        </div>
+
+        <div class="border-b border-slate-100 px-4 py-3 sm:px-5">
+          <form method="get" action="{% url 'alertes' %}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input type="hidden" name="category" value="{{ active_category }}">
+            <div class="relative flex-1">
+              <svg class="field-icon"><use href="#i-search"></use></svg>
+              <input type="search" name="q" value="{{ query }}" class="field h-10 pl-10" placeholder="Rechercher un lot, un produit, une alerte…">
+            </div>
+            <button type="submit" class="btn-secondary h-10 px-4 text-xs">
+              <svg class="icon-sm"><use href="#i-filter"></use></svg>
+              Filtrer
+            </button>
+            {% if query %}
+              <a href="{% url 'alertes' %}" class="btn-ghost h-10 px-3 text-xs">
+                <svg class="icon-sm"><use href="#i-x"></use></svg>
+                Effacer
+              </a>
+            {% endif %}
+          </form>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+          {% for alert in alerts %}
+            <div class="group flex gap-3 px-4 py-4 transition hover:bg-slate-50/80 sm:px-5 {% if not alert.unread %}opacity-70{% endif %}">
+              <span class="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl {{ alert.tone_meta.icon }}">
+                <svg class="icon"><use href="#i-{{ alert.icon }}"></use></svg>
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-sm font-bold text-slate-800">{{ alert.title }}</h3>
+                  <span class="badge {{ alert.tone_meta.badge }}">{{ alert.severity }}</span>
+                  {% if alert.unread %}<span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>{% endif %}
+                </div>
+                <p class="mt-1 text-xs leading-5 text-slate-500">{{ alert.detail }}</p>
+                <p class="mt-2 flex items-center gap-1.5 text-[10px] font-medium text-slate-400">
+                  <svg class="h-3 w-3"><use href="#i-clock"></use></svg>
+                  {{ alert.time }} · {{ alert.source }}
+                </p>
+              </div>
+              <div class="shrink-0 self-center">
+                {% if alert.category == 'systeme' %}
+                  <button type="button" class="btn-ghost h-8 px-2.5 text-xs" @click="window.showToast('Sauvegarde vérifiée : aucune anomalie détectée.')">{{ alert.action_label }}</button>
+                {% else %}
+                  <a href="{% url alert.action_url %}{{ alert.query }}" class="btn-ghost h-8 px-2.5 text-xs">{{ alert.action_label }}</a>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <div class="flex flex-col items-center justify-center px-6 py-16 text-center">
+              <span class="grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400"><svg class="h-7 w-7"><use href="#i-bell"></use></svg></span>
+              <h3 class="mt-4 text-sm font-extrabold text-slate-900">Aucune alerte trouvée</h3>
+              <p class="mt-1 text-xs text-slate-500">Modifiez votre recherche ou consultez toutes les alertes.</p>
+              <a href="{% url 'alertes' %}" class="btn-secondary mt-4 text-xs">Tout afficher</a>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-5">
+          <p class="text-[11px] font-medium text-slate-400">{{ total_alerts }} alertes · <span class="font-bold text-slate-600">{{ unread_count }} non lues</span></p>
+          <button type="button" class="text-[11px] font-bold text-brand-700 hover:text-brand-800" @click="window.showToast('Toutes les alertes sont déjà chargées (démo).')">Charger plus</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-5 xl:col-span-4">
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Répartition</h2>
+          <span class="badge bg-white text-slate-600 ring-slate-200">{{ total_alerts }} alertes</span>
+        </div>
+        <div class="mt-5 flex items-center gap-5">
+          <div class="relative grid h-28 w-28 shrink-0 place-items-center rounded-full" style="{{ donut_style }}">
+            <div class="grid h-20 w-20 place-items-center rounded-full bg-white text-center shadow-inner">
+              <div>
+                <p class="text-xl font-extrabold tracking-tight text-slate-900 tabular">{{ total_alerts }}</p>
+                <p class="text-[9px] font-semibold uppercase tracking-wide text-slate-400">au total</p>
+              </div>
+            </div>
+          </div>
+          <div class="min-w-0 flex-1 space-y-2">
+            {% for item in distribution %}
+              <div class="flex items-center justify-between gap-2 text-[11px]">
+                <span class="flex items-center gap-1.5 text-slate-500"><span class="h-1.5 w-1.5 rounded-sm" style="background: {{ item.color }}"></span>{{ item.label }}</span>
+                <b class="text-slate-700 tabular">{{ item.value }}</b>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="mt-5 space-y-3 border-t border-slate-100 pt-4">
+          {% for bar in category_bars %}
+            <div>
+              <div class="mb-1 flex items-center justify-between text-[10px] font-semibold">
+                <span class="text-slate-500">{{ bar.label }}</span>
+                <span class="text-slate-700 tabular">{{ bar.value }}</span>
+              </div>
+              <div class="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div class="h-full rounded-full" style="width: {{ bar.share }}%; background: {{ bar.color }}"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card p-5 animate-fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Règles de notification</h2>
+          <a href="{% url 'administration' %}" class="text-[11px] font-bold text-brand-700 hover:text-brand-800">Gérer</a>
+        </div>
+        <div class="mt-2 divide-y divide-slate-100">
+          {% for rule in alert_rules %}
+            <div class="flex items-center gap-3 py-3">
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-slate-800">{{ rule.title }}</p>
+                <p class="mt-0.5 text-[10px] text-slate-400">{{ rule.detail }}</p>
+              </div>
+              {% if rule.locked %}
+                <span class="inline-flex h-5 w-9 cursor-not-allowed items-center rounded-full bg-brand-500 px-0.5 opacity-60" title="Règle obligatoire">
+                  <span class="ml-auto h-4 w-4 rounded-full bg-white shadow-sm"></span>
+                </span>
+              {% else %}
+                <button
+                  type="button"
+                  class="inline-flex h-5 w-9 items-center rounded-full px-0.5 transition"
+                  :class="enabled[{{ forloop.counter0 }}] ? 'bg-brand-500' : 'bg-slate-200'"
+                  @click="enabled[{{ forloop.counter0 }}] = !enabled[{{ forloop.counter0 }}]; window.showToast('Règle de notification mise à jour (démo).')"
+                  :aria-checked="enabled[{{ forloop.counter0 }}]"
+                  aria-label="Activer la règle"
+                >
+                  <span class="h-4 w-4 rounded-full bg-white shadow-sm transition" :class="enabled[{{ forloop.counter0 }}] ? 'translate-x-4' : 'translate-x-0'"></span>
+                </button>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[10px] leading-5 text-slate-500">
+          Les alertes de péremption et de rappel ne peuvent pas être désactivées (RG-02, RG-08). Configuration réservée à l'administrateur.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
