@@ -93,6 +93,13 @@ ORDER_STEPS = [
     {"key": "livree", "label": "Livrée"},
 ]
 
+# Correspondance entre les statuts métier actuels et les étapes du parcours du
+# cahier des charges (index dans ORDER_STEPS).
+#
+# À noter : le statut « Validée » du CDC n'existe pas encore dans les données.
+# Il sera ajouté en T-07. En attendant, « En attente » est rattaché à l'étape
+# « Brouillon » (commande créée, en attente de validation).
+# La valeur -1 marque une commande annulée : aucune étape n'est active.
 STATUS_STEP = {
     "attente": 0,
     "preparation": 2,
