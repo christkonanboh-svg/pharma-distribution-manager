@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --sidebar-width: 272px;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
@@ -79,9 +83,164 @@
     @apply bg-white/[0.09] text-white shadow-inner shadow-white/[0.03];
   }
 
+  .nav-item:focus-visible {
+    outline: 2px solid theme("colors.brand.300");
+    outline-offset: 2px;
+  }
+
   .nav-item-active::before {
     content: "";
     @apply absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-brand-400;
+  }
+
+  .app-sidebar {
+    width: var(--sidebar-width);
+    transition: transform 300ms ease-out;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+  }
+
+  .sidebar-toggle {
+    @apply border-slate-200 bg-white text-slate-600;
+    position: absolute;
+    top: 84px;
+    right: -14px;
+    z-index: 10;
+    height: 28px;
+    width: 28px;
+    place-items: center;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 9999px;
+    box-shadow: 0 10px 24px -12px rgba(8, 14, 29, 0.55);
+    transition: color 200ms ease, border-color 200ms ease, transform 200ms ease;
+  }
+
+  .sidebar-toggle:hover {
+    @apply border-slate-300 text-slate-900;
+    transform: scale(1.04);
+  }
+
+  .sidebar-toggle:active {
+    transform: scale(0.96);
+  }
+
+  .sidebar-toggle:focus-visible {
+    outline: 2px solid theme("colors.brand.600");
+    outline-offset: 2px;
+  }
+
+  .sidebar-tooltip {
+    @apply bg-navy-950 text-white;
+    position: fixed;
+    left: 88px;
+    z-index: 60;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    border-radius: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    pointer-events: none;
+    box-shadow: 0 12px 30px -12px rgba(8, 14, 29, 0.6);
+  }
+
+  .sidebar-tooltip::before {
+    content: "";
+    position: absolute;
+    left: -3px;
+    top: 50%;
+    height: 6px;
+    width: 6px;
+    transform: translateY(-50%) rotate(45deg);
+    background: theme("colors.navy.950");
+  }
+
+  @media (max-width: 1023.98px) {
+    .sidebar-tooltip {
+      display: none !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html.sidebar-collapsed {
+      --sidebar-width: 80px;
+    }
+
+    .app-sidebar {
+      transition: transform 300ms ease-out, width 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .app-shell {
+      padding-left: var(--sidebar-width);
+      transition: padding-left 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html.sidebar-collapsed .app-sidebar .sidebar-brand-text,
+    html.sidebar-collapsed .app-sidebar .sidebar-section-title,
+    html.sidebar-collapsed .app-sidebar .sidebar-demo-text,
+    html.sidebar-collapsed .app-sidebar .sidebar-profile-text,
+    html.sidebar-collapsed .app-sidebar .sidebar-logout,
+    html.sidebar-collapsed .app-sidebar .sidebar-meta {
+      display: none !important;
+    }
+
+    html.sidebar-collapsed .app-sidebar .sidebar-header {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    html.sidebar-collapsed .app-sidebar .sidebar-label {
+      flex: 0 0 0;
+      width: 0;
+      max-width: 0;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    html.sidebar-collapsed .app-sidebar .nav-item {
+      justify-content: center;
+      gap: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    html.sidebar-collapsed .app-sidebar .nav-badge {
+      position: absolute;
+      top: 4px;
+      right: 12px;
+      display: flex;
+      min-width: 18px;
+      height: 18px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      border-radius: 9999px;
+      font-size: 11px;
+      line-height: 1;
+      box-shadow: 0 0 0 2px theme("colors.navy.950");
+    }
+
+    html.sidebar-collapsed .app-sidebar .sidebar-section + .sidebar-section {
+      @apply border-t border-slate-400/15;
+      padding-top: 0.75rem;
+    }
+
+    html.sidebar-collapsed .app-sidebar .sidebar-demo {
+      padding: 0.375rem;
+      border-color: transparent;
+      background: transparent;
+    }
+
+    html.sidebar-collapsed .app-sidebar .sidebar-profile {
+      justify-content: center;
+      margin-top: 0;
+    }
   }
 
   .icon {
@@ -216,8 +375,15 @@
 
   @media (prefers-reduced-motion: reduce) {
     .order-panel,
-    .progress-fill {
-      transition: none;
+    .progress-fill,
+    .app-sidebar,
+    .app-shell,
+    .sidebar-toggle {
+      transition: none !important;
+    }
+
+    .sidebar-demo-text .animate-ping {
+      animation: none !important;
     }
   }
 

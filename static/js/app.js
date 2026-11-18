@@ -95,7 +95,44 @@
     }
   };
 
+  // Menu latéral : état replié mémorisé, info-bulles et raccourci « [ ».
   document.addEventListener("alpine:init", () => {
+    Alpine.data("layout", () => ({
+      sidebarOpen: false,
+      collapsed: false,
+      tip: null,
+      tipTop: 0,
+
+      init() {
+        this.collapsed = document.documentElement.classList.contains("sidebar-collapsed");
+        window.addEventListener("resize", () => {
+          if (window.innerWidth < 1024) this.hideTip();
+        });
+      },
+
+      toggleSidebar() {
+        this.collapsed = !this.collapsed;
+        document.documentElement.classList.toggle("sidebar-collapsed", this.collapsed);
+        try {
+          window.localStorage.setItem("dpci.sidebar", this.collapsed ? "collapsed" : "expanded");
+        } catch (error) {}
+        this.hideTip();
+      },
+
+      showTip(event) {
+        if (!this.collapsed || window.innerWidth < 1024) return;
+        const item = event.target.closest("[data-tip]");
+        if (!item) return;
+        const rect = item.getBoundingClientRect();
+        this.tip = item.dataset.tip;
+        this.tipTop = Math.round(rect.top + rect.height / 2);
+      },
+
+      hideTip() {
+        this.tip = null;
+      },
+    }));
+
     Alpine.data("dashboard", () => ({
       period: "7j",
       chart: null,
@@ -244,6 +281,27 @@
         event.preventDefault();
         search.focus();
         search.select();
+      }
+    }
+
+    if (
+      event.key === "[" &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      window.innerWidth >= 1024
+    ) {
+      const target = event.target;
+      const typing =
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable);
+      if (typing || !window.Alpine) return;
+
+      const root = document.querySelector("[data-app-layout]");
+      const state = root ? window.Alpine.$data(root) : null;
+      if (state && typeof state.toggleSidebar === "function") {
+        event.preventDefault();
+        state.toggleSidebar();
       }
     }
   });
