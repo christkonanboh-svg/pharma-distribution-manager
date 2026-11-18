@@ -1,15 +1,15 @@
 {% load dpci %}
-<div id="orders-table" class="card overflow-hidden animate-fade-in">
-  <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+<div id="orders-table" class="card overflow-hidden animate-fade-in {% if orders %}max-md:overflow-visible max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none{% endif %}">
+  <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 {% if orders %}max-md:border-0 max-md:px-0 max-md:pb-3{% endif %}">
     <div>
       <div class="flex items-center gap-2">
         <h2 class="text-base font-extrabold tracking-tight text-slate-900">Liste des commandes</h2>
-        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 tabular">{{ total_orders }}</span>
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 tabular">{{ total_orders }}</span>
       </div>
       <p class="mt-0.5 text-xs text-slate-500">Montant cumulé : <span class="font-bold text-slate-700 tabular">{{ total_amount|fcfa }}</span></p>
     </div>
     <div class="flex items-center gap-2">
-      <span class="hidden items-center gap-1.5 text-[11px] font-medium text-slate-400 sm:flex">
+      <span class="hidden items-center gap-1.5 text-[11px] font-medium text-slate-500 sm:flex">
         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
         Synchronisé à l'instant
       </span>
@@ -21,106 +21,200 @@
   </div>
 
   {% if orders %}
-    <div class="overflow-x-auto scrollbar-thin">
-      <table class="w-full min-w-[1040px]">
-        <thead class="bg-slate-50/70">
+    <div
+      x-data="{ open: null }"
+      @keydown.escape="open = null"
+      class="max-md:bg-transparent max-md:p-0"
+    >
+      <table class="w-full table-fixed max-md:block">
+        <thead class="bg-slate-50/70 max-md:hidden">
           <tr>
-            <th class="table-th">Commande</th>
-            <th class="table-th">Client</th>
-            <th class="table-th">Date</th>
-            <th class="table-th">Montant</th>
-            <th class="table-th">Priorité</th>
-            <th class="table-th">Statut</th>
-            <th class="table-th">Avancement</th>
-            <th class="table-th text-right">Actions</th>
+            <th class="table-th w-[20%] px-3">Commande</th>
+            <th class="table-th w-[22%] px-3">Client</th>
+            <th class="table-th w-[16%] px-3">Date</th>
+            <th class="table-th w-[17%] px-3">Montant</th>
+            <th class="table-th w-[18%] px-3">Statut</th>
+            <th class="table-th w-12 px-2"><span class="sr-only">Détails</span></th>
           </tr>
         </thead>
-        <tbody>
-          {% for order in orders %}
-            <tr class="table-row group">
-              <td class="table-td">
-                <div class="flex items-center gap-2.5">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-brand-50 group-hover:text-brand-700">
+        {% for order in orders %}
+          <tbody class="max-md:mb-3 max-md:block max-md:overflow-hidden max-md:rounded-2xl max-md:border max-md:border-slate-200/80 max-md:bg-white max-md:shadow-soft max-md:last:mb-0">
+            <tr
+              class="table-row group max-md:relative max-md:block max-md:border-0 max-md:px-4 max-md:pb-1 max-md:pt-4 {% if forloop.last %}border-b-0{% endif %} cursor-pointer focus:outline-none focus-visible:bg-brand-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600"
+              tabindex="0"
+              :aria-expanded="open === {{ order.id }} ? 'true' : 'false'"
+              aria-controls="order-detail-{{ order.id }}"
+              @click="open = open === {{ order.id }} ? null : {{ order.id }}"
+              @keydown.enter.prevent="open = open === {{ order.id }} ? null : {{ order.id }}"
+              @keydown.space.prevent="open = open === {{ order.id }} ? null : {{ order.id }}"
+            >
+              <td class="table-td max-md:block max-md:px-0 max-md:py-0 max-md:pr-10">
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <span class="hidden h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-brand-50 group-hover:text-brand-700 xl:grid">
                     <svg class="icon-sm"><use href="#i-file"></use></svg>
                   </span>
-                  <div>
-                    <p class="font-bold text-slate-800">{{ order.reference }}</p>
-                    <p class="mt-0.5 text-[11px] text-slate-400">{{ order.lines }} lignes · {{ order.units }} unités</p>
+                  <div class="min-w-0">
+                    <p class="truncate font-bold text-slate-800">{{ order.reference }}</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">{{ order.lines }} lignes · {{ order.units }} unités</p>
                   </div>
                 </div>
               </td>
-              <td class="table-td">
-                <div class="flex items-center gap-2.5">
-                  <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">{{ order.initials }}</span>
-                  <div>
-                    <p class="max-w-[190px] truncate font-semibold text-slate-700">{{ order.client }}</p>
-                    <p class="text-[11px] text-slate-400">{{ order.client_type }} · {{ order.city }}</p>
+              <td class="table-td max-md:block max-md:px-0 max-md:pb-3 max-md:pt-2">
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <span class="hidden h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-[11px] font-bold text-slate-600 xl:grid">{{ order.initials }}</span>
+                  <div class="min-w-0">
+                    <p class="truncate font-semibold text-slate-700">{{ order.client }}</p>
+                    <p class="mt-0.5 hidden truncate text-[11px] text-slate-500 xl:block">{{ order.client_type }} · {{ order.city }}</p>
                   </div>
                 </div>
               </td>
-              <td class="table-td">
-                <p class="font-semibold text-slate-600">{{ order.date }}</p>
-                <p class="mt-0.5 text-[11px] text-slate-400">{{ order.time }}</p>
-              </td>
-              <td class="table-td">
-                <p class="font-bold text-slate-800 tabular">{{ order.amount|fcfa }}</p>
-                <p class="mt-0.5 text-[11px] text-slate-400">{{ order.payment }}</p>
-              </td>
-              <td class="table-td">
-                <span class="badge
-                  {% if order.priority == 'Haute' %}bg-rose-50 text-rose-700 ring-rose-200/70
-                  {% elif order.priority == 'Basse' %}bg-slate-100 text-slate-500 ring-slate-200
-                  {% else %}bg-slate-100 text-slate-600 ring-slate-200{% endif %}">
-                  <span class="h-1.5 w-1.5 rounded-full
-                    {% if order.priority == 'Haute' %}bg-rose-500
-                    {% elif order.priority == 'Basse' %}bg-slate-400
-                    {% else %}bg-slate-500{% endif %}"></span>
-                  {{ order.priority }}
-                </span>
-              </td>
-              <td class="table-td">
-                <span class="badge {{ order.status_meta.badge }}">
-                  <span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>
-                  {{ order.status_meta.label }}
-                </span>
-              </td>
-              <td class="table-td">
-                <div class="flex w-28 items-center gap-2">
-                  <div class="progress-track flex-1"><div class="progress-fill" style="width: {{ order.progress }}%"></div></div>
-                  <span class="w-7 text-right text-[10px] font-bold text-slate-500 tabular">{{ order.progress }}%</span>
+              <td class="table-td max-md:flex max-md:items-center max-md:justify-between max-md:gap-4 max-md:border-t max-md:border-slate-100 max-md:px-0 max-md:py-2.5">
+                <span class="hidden text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 max-md:block">Date</span>
+                <div class="max-md:text-right">
+                  <p class="font-semibold text-slate-600">{{ order.date }}</p>
+                  <p class="mt-0.5 text-[11px] text-slate-500">{{ order.time }}</p>
                 </div>
               </td>
-              <td class="table-td text-right">
-                <div class="flex items-center justify-end gap-1">
-                  <button
-                    type="button"
-                    class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-brand-50 hover:text-brand-700"
-                    hx-get="{% url 'commande_detail' order.id %}"
-                    hx-target="#drawer-body"
-                    hx-swap="innerHTML"
-                    @click="drawer = true"
-                    aria-label="Voir {{ order.reference }}"
-                  >
-                    <svg class="icon-sm"><use href="#i-eye"></use></svg>
-                  </button>
-                  <button
-                    type="button"
-                    class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                    @click="window.showToast('Actions rapides disponibles dans le prochain lot.')"
-                    aria-label="Plus d'actions"
-                  >
-                    <svg class="icon-sm"><use href="#i-more"></use></svg>
-                  </button>
+              <td class="table-td max-md:flex max-md:items-center max-md:justify-between max-md:gap-4 max-md:border-t max-md:border-slate-100 max-md:px-0 max-md:py-2.5">
+                <span class="hidden text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 max-md:block">Montant</span>
+                <div class="max-md:text-right">
+                  <p class="font-bold text-slate-800 tabular">{{ order.amount|fcfa }}</p>
+                  <p class="mt-0.5 hidden text-[11px] text-slate-500 xl:block">{{ order.payment }}</p>
+                </div>
+              </td>
+              <td class="table-td max-md:flex max-md:items-center max-md:justify-between max-md:gap-4 max-md:border-t max-md:border-slate-100 max-md:px-0 max-md:py-2.5">
+                <span class="hidden text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 max-md:block">Statut</span>
+                <div class="flex flex-col items-start gap-1 max-md:items-end">
+                  <span class="badge whitespace-nowrap px-2 py-0.5 text-[11px] {{ order.status_meta.badge }}">
+                    <span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>
+                    {{ order.status_meta.label }}
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset
+                    {% if order.priority == 'Haute' %}bg-rose-50 text-rose-700 ring-rose-200/70
+                    {% elif order.priority == 'Basse' %}bg-white text-slate-500 ring-slate-200
+                    {% else %}bg-slate-100 text-slate-600 ring-slate-200{% endif %}">
+                    <span class="h-1 w-1 rounded-full
+                      {% if order.priority == 'Haute' %}bg-rose-500
+                      {% elif order.priority == 'Basse' %}bg-slate-400
+                      {% else %}bg-slate-500{% endif %}"></span>
+                    {{ order.priority }}
+                  </span>
+                </div>
+              </td>
+              <td class="table-td w-12 px-2 text-right max-md:absolute max-md:right-4 max-md:top-4 max-md:block max-md:p-0">
+                <span
+                  class="inline-grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition duration-200 group-hover:border-slate-300 group-hover:text-slate-700 motion-reduce:transition-none"
+                  :class="open === {{ order.id }} ? 'border-brand-200 bg-brand-50 text-brand-700' : ''"
+                >
+                  <svg class="icon-sm transition-transform duration-200 motion-reduce:transition-none" :class="open === {{ order.id }} ? 'rotate-180' : ''"><use href="#i-chevron-down"></use></svg>
+                </span>
+              </td>
+            </tr>
+            <tr class="max-md:block">
+              <td colspan="6" class="p-0 align-top max-md:block max-md:w-full">
+                <div class="order-panel" :class="open === {{ order.id }} ? 'is-open' : ''">
+                  <div class="min-h-0 overflow-hidden">
+                    <div
+                      id="order-detail-{{ order.id }}"
+                      class="border-t border-slate-100 bg-slate-50/70 px-4 py-5 sm:px-6"
+                      :aria-hidden="open === {{ order.id }} ? 'false' : 'true'"
+                    >
+                      <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem] xl:gap-8">
+                        <div class="min-w-0">
+                          <div class="flex items-center justify-between gap-3">
+                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Avancement</p>
+                            <p class="text-[11px] font-bold tabular text-slate-700">{{ order.progress }} %</p>
+                          </div>
+                          <div class="progress-track mt-2 h-2"><div class="progress-fill" style="width: {{ order.progress }}%"></div></div>
+
+                          <ol class="mt-5 flex flex-col md:flex-row md:items-start md:gap-1">
+                            {% for step in order_steps %}
+                              <li class="relative flex gap-3 pb-4 last:pb-0 md:min-w-0 md:flex-1 md:flex-col md:gap-2 md:pb-0 md:pr-1">
+                                {% if not forloop.last %}
+                                  <span class="absolute left-2 top-4 bottom-0 w-px -translate-x-1/2 {% if forloop.counter0 < order.step_index %}bg-brand-300{% else %}bg-slate-200{% endif %} md:hidden"></span>
+                                {% endif %}
+                                <span class="relative grid h-4 w-4 shrink-0 place-items-center rounded-full border-2
+                                  {% if order.step_index == -1 %}border-slate-300 bg-white
+                                  {% elif forloop.counter0 < order.step_index %}border-brand-600 bg-brand-600
+                                  {% elif forloop.counter0 == order.step_index %}border-brand-500 bg-white ring-4 ring-brand-500/15
+                                  {% else %}border-slate-300 bg-white{% endif %}">
+                                  {% if forloop.counter0 == order.step_index and order.step_index != -1 %}
+                                    <span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                                  {% endif %}
+                                </span>
+                                <span class="max-w-[9rem] pb-0.5 text-[11px] leading-4 md:pb-0
+                                  {% if order.step_index == -1 %}font-medium text-slate-500
+                                  {% elif forloop.counter0 < order.step_index %}font-semibold text-slate-600
+                                  {% elif forloop.counter0 == order.step_index %}font-extrabold text-slate-900
+                                  {% else %}font-medium text-slate-500{% endif %}">{{ step.label }}</span>
+                                {% if not forloop.last %}
+                                  <span class="hidden h-px flex-1 md:block {% if forloop.counter0 < order.step_index %}bg-brand-300{% else %}bg-slate-200{% endif %}"></span>
+                                {% endif %}
+                              </li>
+                            {% endfor %}
+                          </ol>
+
+                          {% if order.status == 'annulee' %}
+                            <p class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-200/70">
+                              <svg class="h-3.5 w-3.5"><use href="#i-ban"></use></svg>
+                              Commande annulée — le parcours est interrompu.
+                            </p>
+                          {% endif %}
+                        </div>
+
+                        <div class="flex flex-col gap-4 border-slate-200/70 xl:border-l xl:pl-8">
+                          <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 xl:grid-cols-1 xl:gap-y-3">
+                            <div>
+                              <dt class="text-[11px] font-medium text-slate-500">Lignes</dt>
+                              <dd class="mt-0.5 text-sm font-bold tabular text-slate-800">{{ order.lines }}</dd>
+                            </div>
+                            <div>
+                              <dt class="text-[11px] font-medium text-slate-500">Unités</dt>
+                              <dd class="mt-0.5 text-sm font-bold tabular text-slate-800">{{ order.units }}</dd>
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                              <dt class="text-[11px] font-medium text-slate-500">Contact client</dt>
+                              <dd class="mt-0.5 truncate text-sm font-semibold text-slate-800">{{ order.contact }}</dd>
+                              <dd class="mt-0.5 text-[11px] font-medium text-slate-500">{{ order.phone }}</dd>
+                            </div>
+                          </dl>
+                          <div class="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              class="btn-primary h-10 px-3.5 text-xs sm:h-9"
+                              hx-get="{% url 'commande_detail' order.id %}"
+                              hx-target="#drawer-body"
+                              hx-swap="innerHTML"
+                              @click="drawer = true"
+                              :tabindex="open === {{ order.id }} ? 0 : -1"
+                            >
+                              <svg class="icon-sm"><use href="#i-eye"></use></svg>
+                              Ouvrir le détail
+                            </button>
+                            <button
+                              type="button"
+                              class="btn-secondary h-10 px-3.5 text-xs sm:h-9"
+                              @click="window.print()"
+                              :tabindex="open === {{ order.id }} ? 0 : -1"
+                            >
+                              <svg class="icon-sm"><use href="#i-printer"></use></svg>
+                              Imprimer
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </td>
             </tr>
-          {% endfor %}
-        </tbody>
+          </tbody>
+        {% endfor %}
       </table>
     </div>
 
-    <div class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-      <p class="text-[11px] font-medium text-slate-400">Affichage de <span class="font-bold text-slate-600">1</span> à <span class="font-bold text-slate-600">{{ total_orders }}</span> sur <span class="font-bold text-slate-600">{{ total_orders }}</span> commande{{ total_orders|pluralize }}</p>
+    <div class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 max-md:border-0 max-md:px-0 max-md:pt-4">
+      <p class="text-[11px] font-medium text-slate-500">Affichage de <span class="font-bold text-slate-600">1</span> à <span class="font-bold text-slate-600">{{ total_orders }}</span> sur <span class="font-bold text-slate-600">{{ total_orders }}</span> commande{{ total_orders|pluralize }}</p>
       <div class="flex items-center gap-1">
         <button type="button" class="grid h-8 w-8 cursor-not-allowed place-items-center rounded-lg border border-slate-200 text-slate-300" disabled aria-label="Page précédente">
           <svg class="icon-sm"><use href="#i-arrow-left"></use></svg>

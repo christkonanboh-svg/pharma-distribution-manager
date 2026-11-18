@@ -83,6 +83,25 @@ STATUS_TABS = [
     ("annulee", "Annulées"),
 ]
 
+# Parcours du cahier des charges, affiché dans le panneau dépliable des commandes.
+ORDER_STEPS = [
+    {"key": "brouillon", "label": "Brouillon"},
+    {"key": "validee", "label": "Validée"},
+    {"key": "preparation", "label": "En préparation"},
+    {"key": "prete", "label": "Prête"},
+    {"key": "expediee", "label": "Expédiée"},
+    {"key": "livree", "label": "Livrée"},
+]
+
+STATUS_STEP = {
+    "attente": 0,
+    "preparation": 2,
+    "prete": 3,
+    "expediee": 4,
+    "livree": 5,
+    "annulee": -1,
+}
+
 ORDERS = [
     {
         "id": 1,
@@ -508,6 +527,7 @@ def decorate(order):
     item["initials"] = _initials(order["client"])
     item["items_preview"] = order["products"][:3]
     item["remaining_products"] = max(0, len(order["products"]) - 3)
+    item["step_index"] = STATUS_STEP.get(order["status"], 0)
     return item
 
 

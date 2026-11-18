@@ -195,6 +195,7 @@ def commandes_view(request):
         "active_client": client,
         "status_tabs": status_tab_items,
         "status_counts": counts,
+        "order_steps": data.ORDER_STEPS,
         "all_count": all_count,
         "clients": data.clients(),
         "urgent_count": sum(1 for order in orders if order["priority"] == "Haute"),
