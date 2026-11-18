@@ -23,7 +23,7 @@
   {% if orders %}
     <div
       x-data="{ open: null }"
-      @keydown.escape="open = null"
+      @keydown.escape="if (!drawer) { open = null }"
       class="max-md:bg-transparent max-md:p-0"
     >
       <table class="w-full table-fixed max-md:block">
