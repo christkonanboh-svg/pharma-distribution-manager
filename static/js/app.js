@@ -77,6 +77,24 @@
     });
   };
 
+  // Impression d'une seule commande : le contenu est cloné dans une feuille
+  // dédiée, puis la boîte d'impression native est ouverte. La feuille est
+  // retirée dès que la boîte se ferme pour ne pas polluer la page.
+  window.printOrder = function (template) {
+    if (!template || !template.content) return;
+
+    const sheet = document.createElement("div");
+    sheet.className = "print-sheet";
+    sheet.appendChild(template.content.cloneNode(true));
+    document.body.appendChild(sheet);
+
+    try {
+      window.print();
+    } finally {
+      sheet.remove();
+    }
+  };
+
   document.addEventListener("alpine:init", () => {
     Alpine.data("dashboard", () => ({
       period: "7j",

@@ -143,6 +143,10 @@
     overflow: hidden;
   }
 
+  .print-sheet {
+    display: none;
+  }
+
   .htmx-indicator {
     @apply opacity-0 transition-opacity duration-200;
   }
@@ -214,6 +218,37 @@
     .order-panel,
     .progress-fill {
       transition: none;
+    }
+  }
+
+  /* Impression d'une commande : masque le menu latéral, la barre du haut,
+     les filtres et toutes les autres lignes ; seule la feuille dédiée sort. */
+  @media print {
+    @page {
+      margin: 16mm;
+    }
+
+    body {
+      background: #fff !important;
+    }
+
+    aside,
+    header,
+    #orders-filter,
+    #toast-root,
+    [role="dialog"] {
+      display: none !important;
+    }
+
+    body > *:not(.print-sheet) {
+      display: none !important;
+    }
+
+    .print-sheet {
+      display: block !important;
+      color: #0f172a;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
     }
   }
 
