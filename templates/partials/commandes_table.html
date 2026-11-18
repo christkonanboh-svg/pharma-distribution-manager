@@ -121,11 +121,25 @@
                     >
                       <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem] xl:gap-8">
                         <div class="min-w-0">
-                          <div class="flex items-center justify-between gap-3">
-                            <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Avancement</p>
-                            <p class="text-[11px] font-bold tabular text-slate-700">{{ order.progress }} %</p>
+                          <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                              <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Avancement</p>
+                              {% if order.status == 'annulee' %}
+                                <span class="badge bg-rose-50 px-2 py-0.5 text-[11px] text-rose-700 ring-rose-200/70">
+                                  <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                  Annulée
+                                </span>
+                              {% endif %}
+                            </div>
+                            {% if order.status == 'annulee' %}
+                              <p class="text-[11px] font-bold tabular text-rose-700">—</p>
+                            {% else %}
+                              <p class="text-[11px] font-bold tabular text-slate-700">{{ order.progress }} %</p>
+                            {% endif %}
                           </div>
-                          <div class="progress-track mt-2 h-2"><div class="progress-fill" style="width: {{ order.progress }}%"></div></div>
+                          <div class="progress-track mt-2 h-2">
+                            <div class="progress-fill {% if order.status == 'annulee' %}bg-none bg-slate-300{% endif %}" style="width: {% if order.status == 'annulee' %}0{% else %}{{ order.progress }}{% endif %}%"></div>
+                          </div>
 
                           <ol class="mt-5 flex flex-col md:flex-row md:items-start md:gap-1">
                             {% for step in order_steps %}
