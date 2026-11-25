@@ -1,0 +1,102 @@
+{% extends "client/base.html" %}
+{% load dpci %}
+
+{% block title %}Mes commandes — Espace client DPCI{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">Suivi</p>
+    <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-navy-900 sm:text-[28px]">Mes commandes</h1>
+    <p class="mt-1 text-sm text-slate-500">{{ total_count }} commande{{ total_count|pluralize }} enregistrée{{ total_count|pluralize }} pour {{ client_name }}.</p>
+  </div>
+  <a href="{% url 'client_catalogue' %}" class="btn-primary shrink-0 self-start sm:self-auto">
+    <svg class="icon-sm h-4 w-4"><use href="#i-plus"></use></svg>
+    Nouvelle commande
+  </a>
+</div>
+
+<div class="mt-5 flex flex-wrap items-center gap-1.5">
+  <a href="{% url 'client_orders' %}{% if query %}?q={{ query|urlencode }}{% endif %}" class="client-chip {% if not status %}client-chip-active{% endif %}">
+    Toutes <span class="client-chip-count">{{ total_count }}</span>
+  </a>
+  {% for key, meta in status_meta.items %}
+    <a href="{% url 'client_orders' %}?statut={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="client-chip {% if status == key %}client-chip-active{% endif %}">
+      {{ meta.label }}
+      <span class="client-chip-count">{% for count_key, count_value in counts.items %}{% if count_key == key %}{{ count_value }}{% endif %}{% endfor %}</span>
+    </a>
+  {% endfor %}
+</div>
+
+<form method="get" action="{% url 'client_orders' %}" class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+  {% if status %}<input type="hidden" name="statut" value="{{ status }}">{% endif %}
+  <div class="relative flex-1">
+    <svg class="field-icon"><use href="#i-search"></use></svg>
+    <input type="search" name="q" value="{{ query }}" class="field h-10 pl-10" placeholder="Rechercher une référence ou un produit…" aria-label="Rechercher une commande">
+  </div>
+  <div class="flex items-center gap-2">
+    <button type="submit" class="btn-secondary h-10 px-4">Filtrer</button>
+    {% if query or status %}
+      <a href="{% url 'client_orders' %}" class="btn-ghost h-10 px-3 text-slate-500">Réinitialiser</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if orders %}
+  <ul class="mt-4 space-y-2.5">
+    {% for order in orders %}
+      <li>
+        <a href="{% url 'client_order_detail' order.reference %}" class="group card card-hover block p-4 sm:p-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+            <div class="flex min-w-0 flex-1 items-start gap-3">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-brand-50 group-hover:text-brand-700">
+                <svg class="icon-sm h-5 w-5"><use href="#i-receipt"></use></svg>
+              </span>
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-[13px] font-extrabold text-navy-900">{{ order.reference }}</p>
+                  <span class="badge {{ order.status_meta.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>{{ order.status_meta.label }}</span>
+                </div>
+                <p class="mt-1 truncate text-[11px] text-slate-500">{{ order.date }} à {{ order.time }} · {{ order.lines }} ligne{{ order.lines|pluralize }} · {{ order.units }} unités</p>
+                <p class="mt-0.5 truncate text-[11px] text-slate-500">{{ order.items_preview|join:", " }}{% if order.remaining_products %} +{{ order.remaining_products }}{% endif %}</p>
+              </div>
+            </div>
+
+            <div class="pl-12 sm:pl-0">
+              <div class="flex items-center gap-3 sm:hidden">
+                <span class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Montant</span>
+                <span class="ml-auto text-sm font-extrabold tabular-nums text-navy-900">{{ order.amount|fcfa }}</span>
+              </div>
+              <div class="mt-2 flex items-center gap-3 sm:mt-0">
+                <div class="min-w-0 flex-1 sm:w-36">
+                  <div class="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div class="h-full rounded-full {{ order.status_meta.bar }}" style="width: {{ order.progress }}%"></div>
+                  </div>
+                  <p class="mt-1 text-[10px] text-slate-500">Étape {{ order.step_index|add:1 }}/5</p>
+                </div>
+                <p class="hidden w-24 text-right text-sm font-extrabold tabular-nums text-navy-900 sm:block">{{ order.amount|fcfa }}</p>
+                <svg class="icon-sm h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-brand-700"><use href="#i-chevron-right"></use></svg>
+              </div>
+            </div>
+          </div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+    <span class="grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+      <svg class="h-6 w-6"><use href="#i-receipt"></use></svg>
+    </span>
+    <p class="mt-4 text-sm font-bold text-navy-900">Aucune commande {% if query or status %}pour ce filtre{% endif %}</p>
+    <p class="mt-1 max-w-sm text-xs leading-5 text-slate-500">
+      {% if query or status %}Modifiez votre recherche ou affichez toutes vos commandes.{% else %}Passez une première commande depuis le catalogue pour la suivre ici.{% endif %}
+    </p>
+    {% if query or status %}
+      <a href="{% url 'client_orders' %}" class="btn-secondary mt-4">Toutes mes commandes</a>
+    {% else %}
+      <a href="{% url 'client_catalogue' %}" class="btn-primary mt-4">Parcourir le catalogue</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

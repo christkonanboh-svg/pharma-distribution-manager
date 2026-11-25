@@ -18,10 +18,12 @@
         <svg class="icon-sm"><use href="#i-check"></use></svg>
         Tout marquer comme lu
       </button>
-      <a href="{% url 'administration' %}" class="btn-primary">
-        <svg class="icon-sm"><use href="#i-settings"></use></svg>
-        Paramétrer les seuils
-      </a>
+      {% if user.actor == 'admin' %}
+        <a href="{% url 'administration' %}" class="btn-primary">
+          <svg class="icon-sm"><use href="#i-settings"></use></svg>
+          Paramétrer les seuils
+        </a>
+      {% endif %}
     </div>
   </div>
 
@@ -181,7 +183,9 @@
       <div class="card p-5 animate-fade-up">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-extrabold tracking-tight text-slate-900">Règles de notification</h2>
-          <a href="{% url 'administration' %}" class="text-[11px] font-bold text-brand-700 hover:text-brand-800">Gérer</a>
+          {% if user.actor == 'admin' %}
+            <a href="{% url 'administration' %}" class="text-[11px] font-bold text-brand-700 hover:text-brand-800">Gérer</a>
+          {% endif %}
         </div>
         <div class="mt-2 divide-y divide-slate-100">
           {% for rule in alert_rules %}

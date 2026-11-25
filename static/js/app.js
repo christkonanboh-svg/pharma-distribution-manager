@@ -97,6 +97,119 @@
 
   // Menu latéral : état replié mémorisé, info-bulles et raccourci « [ ».
   document.addEventListener("alpine:init", () => {
+    const cartRoot = document.querySelector("[data-client-area]");
+    const CART_KEY = (cartRoot && cartRoot.dataset.cartKey) || "dpci.cart";
+    const readCart = () => {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem(CART_KEY) || "[]");
+        return Array.isArray(stored) ? stored : [];
+      } catch (error) {
+        return [];
+      }
+    };
+
+    // Panier du portail client : persistant, partagé entre les pages.
+    Alpine.store("cart", {
+      items: readCart(),
+      open: false,
+      saving: false,
+      error: "",
+
+      persist() {
+        try {
+          window.localStorage.setItem(CART_KEY, JSON.stringify(this.items));
+        } catch (error) {}
+      },
+
+      get count() {
+        return this.items.reduce((sum, item) => sum + item.qty, 0);
+      },
+
+      get total() {
+        return this.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+      },
+
+      add(product) {
+        if (!product || Number(product.stock) <= 0) return;
+        const line = this.items.find((item) => item.code === product.code);
+        if (line) {
+          line.qty = Math.min(line.qty + 1, Number(product.stock));
+        } else {
+          this.items.push({ ...product, qty: 1 });
+        }
+        this.error = "";
+        this.persist();
+        this.open = true;
+      },
+
+      setQty(code, qty) {
+        const line = this.items.find((item) => item.code === code);
+        if (!line) return;
+        line.qty = Math.min(Math.max(1, Math.round(Number(qty) || 1)), Number(line.stock) || 1);
+        this.persist();
+      },
+
+      remove(code) {
+        this.items = this.items.filter((item) => item.code !== code);
+        this.persist();
+      },
+
+      clear() {
+        this.items = [];
+        this.persist();
+      },
+
+      openDrawer() {
+        this.error = "";
+        this.open = true;
+      },
+
+      closeDrawer() {
+        this.open = false;
+      },
+
+      async submit() {
+        if (!this.items.length || this.saving) return;
+
+        const root = document.querySelector("[data-client-area]");
+        const url = root ? root.dataset.orderUrl : "";
+        const token = document.querySelector('meta[name="csrf-token"]');
+        this.saving = true;
+        this.error = "";
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": token ? token.content : "",
+            },
+            body: JSON.stringify({
+              items: this.items.map((item) => ({ code: item.code, qty: item.qty })),
+            }),
+          });
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "La commande n'a pas pu être enregistrée.");
+          }
+          this.clear();
+          this.open = false;
+          window.location.assign(payload.redirect);
+        } catch (error) {
+          this.error = error.message || "Erreur inattendue. Réessayez.";
+        } finally {
+          this.saving = false;
+        }
+      },
+    });
+
+    Alpine.data("clientArea", () => ({
+      money(value) {
+        const number = Number(value) || 0;
+        return number.toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " F";
+      },
+    }));
+
     Alpine.data("layout", () => ({
       sidebarOpen: false,
       collapsed: false,
@@ -172,7 +285,7 @@
         gradient.addColorStop(1, "rgba(16, 172, 148, 0)");
 
         Chart.defaults.font.family = '"Plus Jakarta Sans", sans-serif';
-        Chart.defaults.color = "#94a3b8";
+        Chart.defaults.color = "#64748b";
 
         this.chart = new Chart(context, {
           type: "line",
@@ -186,9 +299,9 @@
                 backgroundColor: gradient,
                 fill: true,
                 tension: 0.42,
-                borderWidth: 2.5,
+                borderWidth: 2,
                 pointRadius: 0,
-                pointHoverRadius: 5,
+                pointHoverRadius: 4,
                 pointHoverBackgroundColor: "#ffffff",
                 pointHoverBorderColor: "#0b8a79",
                 pointHoverBorderWidth: 2,
@@ -196,7 +309,7 @@
               {
                 label: "Commandes",
                 data: series.orders,
-                borderColor: "#38bdf8",
+                borderColor: "#7287b2",
                 backgroundColor: "transparent",
                 fill: false,
                 tension: 0.42,
@@ -222,10 +335,10 @@
                 borderColor: "rgba(148, 163, 184, 0.2)",
                 borderWidth: 1,
                 padding: 12,
-                cornerRadius: 12,
+                cornerRadius: 8,
                 displayColors: true,
                 boxPadding: 4,
-                titleFont: { size: 11, weight: "700" },
+                titleFont: { size: 11, weight: "600" },
                 bodyFont: { size: 11, weight: "500" },
                 callbacks: {
                   label(context) {
@@ -242,18 +355,18 @@
                 grid: { display: false },
                 border: { display: false },
                 ticks: {
-                  color: "#94a3b8",
-                  font: { size: 10, weight: "600" },
+                  color: "#64748b",
+                  font: { size: 10, weight: "500" },
                   maxRotation: 0,
                 },
               },
               y: {
                 beginAtZero: true,
-                grid: { color: "rgba(148, 163, 184, 0.12)" },
+                grid: { color: "rgba(148, 163, 184, 0.16)" },
                 border: { display: false },
                 ticks: {
-                  color: "#94a3b8",
-                  font: { size: 10, weight: "600" },
+                  color: "#64748b",
+                  font: { size: 10, weight: "500" },
                   padding: 8,
                   callback(value) {
                     return compactNumber(value) + " M";

@@ -10,15 +10,9 @@
 <aside
   id="app-sidebar"
   aria-label="Navigation principale"
-  class="app-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/5 bg-navy-950 text-slate-300 shadow-2xl lg:translate-x-0"
+  class="app-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/[0.06] bg-navy-950 text-slate-300 lg:translate-x-0"
   :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
 >
-  <div class="pointer-events-none absolute inset-0 overflow-hidden">
-    <div class="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-brand-500/15 blur-3xl"></div>
-    <div class="absolute -bottom-32 -right-20 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl"></div>
-    <div class="absolute inset-0 bg-grid-dark opacity-70"></div>
-  </div>
-
   <button
     type="button"
     class="sidebar-toggle hidden lg:grid"
@@ -32,20 +26,19 @@
   </button>
 
   <div class="relative flex min-h-0 flex-1 flex-col">
-    <div class="sidebar-header flex items-center justify-between px-5 pb-5 pt-6">
+    <div class="sidebar-header flex items-center justify-between px-4 pb-5 pt-5">
       <a href="{% url 'dashboard' %}" class="group flex items-center gap-3" aria-label="DPCI — Tableau de bord">
-        <span class="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700 shadow-glow transition duration-300 group-hover:scale-105">
-          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-600 transition duration-200 group-hover:bg-brand-500">
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
           </svg>
-          <span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-navy-950 bg-emerald-400"></span>
         </span>
         <span class="sidebar-brand-text">
-          <span class="flex items-baseline text-lg font-extrabold tracking-tight text-white">DPCI<span class="text-brand-400">.</span></span>
-          <span class="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Plateforme pharma</span>
+          <span class="flex items-baseline text-[17px] font-bold tracking-tight text-white">DPCI<span class="text-brand-400">.</span></span>
+          <span class="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Plateforme pharma</span>
         </span>
       </a>
-      <button type="button" class="btn-icon border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white lg:hidden" @click="sidebarOpen = false" aria-label="Fermer le menu">
+      <button type="button" class="btn-icon text-slate-400 hover:bg-white/10 hover:text-white lg:hidden" @click="sidebarOpen = false" aria-label="Fermer le menu">
         <svg class="icon-sm"><use href="#i-x"></use></svg>
       </button>
     </div>
@@ -60,7 +53,7 @@
       aria-label="Sections"
     >
       <div class="sidebar-section">
-        <p class="sidebar-section-title mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Pilotage</p>
+        <p class="sidebar-section-title mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Pilotage</p>
         <div class="space-y-1">
           <a href="{% url 'dashboard' %}" class="nav-item {% if active_nav == 'dashboard' %}nav-item-active{% endif %}" data-tip="Tableau de bord" aria-label="Tableau de bord" @click="sidebarOpen = false">
             <svg class="icon"><use href="#i-dashboard"></use></svg>
@@ -89,7 +82,7 @@
       </div>
 
       <div class="sidebar-section">
-        <p class="sidebar-section-title mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Stock &amp; traçabilité</p>
+        <p class="sidebar-section-title mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Stock &amp; traçabilité</p>
         <div class="space-y-1">
           <a href="{% url 'stock_lots' %}" class="nav-item {% if active_nav == 'stock' %}nav-item-active{% endif %}" data-tip="Stock &amp; lots" aria-label="Stock et lots" @click="sidebarOpen = false">
             <svg class="icon"><use href="#i-box"></use></svg>
@@ -111,16 +104,18 @@
       </div>
 
       <div class="sidebar-section">
-        <p class="sidebar-section-title mb-2 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Organisation</p>
+        <p class="sidebar-section-title mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Organisation</p>
         <div class="space-y-1">
           <a href="{% url 'referentiels' %}" class="nav-item {% if active_nav == 'referentiels' %}nav-item-active{% endif %}" data-tip="Référentiels" aria-label="Référentiels" @click="sidebarOpen = false">
             <svg class="icon"><use href="#i-pill"></use></svg>
             <span class="sidebar-label flex-1">Référentiels</span>
           </a>
-          <a href="{% url 'administration' %}" class="nav-item {% if active_nav == 'admin' %}nav-item-active{% endif %}" data-tip="Administration" aria-label="Administration" @click="sidebarOpen = false">
-            <svg class="icon"><use href="#i-users"></use></svg>
-            <span class="sidebar-label flex-1">Administration</span>
-          </a>
+          {% if user.actor == 'admin' %}
+            <a href="{% url 'administration' %}" class="nav-item {% if active_nav == 'admin' %}nav-item-active{% endif %}" data-tip="Administration" aria-label="Administration" @click="sidebarOpen = false">
+              <svg class="icon"><use href="#i-users"></use></svg>
+              <span class="sidebar-label flex-1">Administration</span>
+            </a>
+          {% endif %}
           <span class="nav-item cursor-not-allowed opacity-40" title="Bientôt disponible" data-tip="Rapports — bientôt" aria-disabled="true">
             <svg class="icon"><use href="#i-chart"></use></svg>
             <span class="sidebar-label flex-1">Rapports</span>
@@ -131,16 +126,13 @@
     </nav>
 
     <div class="relative border-t border-white/5 p-3">
-      <div class="sidebar-demo rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <div class="sidebar-demo-text flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-300">
-          <span class="relative flex h-2 w-2">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-60"></span>
-            <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
-          </span>
+      <div class="sidebar-demo rounded-xl border border-white/[0.08] bg-white/[0.03] p-2.5">
+        <div class="sidebar-demo-text flex items-center gap-2 px-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-300">
+          <span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span>
           Mode démonstration
         </div>
-        <div class="sidebar-profile mt-3 flex items-center gap-3">
-          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-300 to-brand-600 text-xs font-bold text-navy-950 shadow-lg shadow-brand-900/30">{{ user.initials }}</div>
+        <div class="sidebar-profile mt-2.5 flex items-center gap-2.5">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-700 text-[11px] font-semibold text-white">{{ user.initials }}</div>
           <div class="sidebar-profile-text min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-white">{{ user.name }}</p>
             <p class="text-[11px] leading-tight text-slate-400">{{ user.role }}</p>

@@ -1,0 +1,127 @@
+{% load static %}
+<!doctype html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Espace client DPCI — catalogue, commandes et suivi des livraisons pharmaceutiques.">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}Espace client — DPCI{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="min-h-full bg-canvas text-slate-900" x-data="clientArea" data-client-area data-cart-key="dpci.cart.{{ user.username }}" data-order-url="{% url 'client_order_create' %}">
+  {% include "partials/icons.html" %}
+
+  <div class="flex min-h-screen flex-col">
+    <header class="sticky top-0 z-40 border-b border-hairline bg-white/95 backdrop-blur">
+      <div class="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <a href="{% url 'client_home' %}" class="flex shrink-0 items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40">
+          <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 via-brand-600 to-brand-800 shadow-sm shadow-brand-900/20">
+            <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v18M3 12h18"/>
+            </svg>
+          </span>
+          <span class="leading-tight">
+            <span class="block text-sm font-extrabold tracking-[0.16em] text-navy-900">DPCI</span>
+            <span class="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Espace client</span>
+          </span>
+        </a>
+
+        <nav class="ml-6 hidden items-center gap-1 lg:flex" aria-label="Navigation principale">
+          <a href="{% url 'client_home' %}" class="client-nav {% if active == 'accueil' %}client-nav-active{% endif %}">
+            <svg class="icon-sm"><use href="#i-home"></use></svg> Accueil
+          </a>
+          <a href="{% url 'client_catalogue' %}" class="client-nav {% if active == 'catalogue' %}client-nav-active{% endif %}">
+            <svg class="icon-sm"><use href="#i-grid"></use></svg> Catalogue
+          </a>
+          <a href="{% url 'client_orders' %}" class="client-nav {% if active == 'commandes' %}client-nav-active{% endif %}">
+            <svg class="icon-sm"><use href="#i-receipt"></use></svg> Mes commandes
+            {% if summary.active_count %}
+              <span class="ml-0.5 rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-inset ring-brand-200/70">{{ summary.active_count }}</span>
+            {% endif %}
+          </a>
+        </nav>
+
+        <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
+          <a href="{% url 'client_orders' %}" class="hidden items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-navy-900 md:inline-flex">
+            <span class="grid h-7 w-7 place-items-center rounded-md bg-slate-100 text-[10px] font-bold text-slate-600">{{ user.initials }}</span>
+            <span class="max-w-[11rem] truncate">{{ client_name }}</span>
+          </a>
+
+          <button type="button" class="relative inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-navy-900 shadow-sm transition hover:border-brand-300 hover:bg-brand-50/50" @click="$store.cart.openDrawer()" aria-label="Ouvrir le panier">
+            <svg class="icon-sm h-4 w-4 text-brand-700"><use href="#i-cart"></use></svg>
+            <span class="hidden sm:inline">Panier</span>
+            <span x-cloak x-show="$store.cart.count > 0" x-text="$store.cart.count" class="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-brand-700 px-1 text-[10px] font-bold text-white"></span>
+          </button>
+
+          <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
+            <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" @click="open = !open" :aria-expanded="open" aria-haspopup="menu" aria-label="Mon compte">
+              <svg class="icon-sm h-4 w-4"><use href="#i-user"></use></svg>
+            </button>
+            <div x-cloak x-show="open" x-transition.opacity.duration.150ms @click.outside="open = false" class="absolute right-0 top-12 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-panel" role="menu">
+              <div class="border-b border-slate-100 px-4 py-3">
+                <p class="text-sm font-bold text-navy-900">{{ user.name }}</p>
+                <p class="mt-0.5 text-[11px] text-slate-500">{{ account.email }}</p>
+                <p class="mt-2 inline-flex rounded-md bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-inset ring-brand-200/70">{{ account.role }}</p>
+              </div>
+              <div class="p-1.5">
+                <a href="{% url 'client_orders' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-slate-700 transition hover:bg-slate-100">
+                  <svg class="icon-sm h-4 w-4 text-slate-500"><use href="#i-receipt"></use></svg> Mes commandes
+                </a>
+                <a href="{% url 'client_catalogue' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-slate-700 transition hover:bg-slate-100">
+                  <svg class="icon-sm h-4 w-4 text-slate-500"><use href="#i-grid"></use></svg> Catalogue produits
+                </a>
+                <a href="{% url 'logout' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-rose-600 transition hover:bg-rose-50">
+                  <svg class="icon-sm h-4 w-4"><use href="#i-logout"></use></svg> Se déconnecter
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="flex items-center gap-1 overflow-x-auto border-t border-slate-100 px-4 py-2 sm:px-6 lg:hidden" aria-label="Navigation mobile">
+        <a href="{% url 'client_home' %}" class="client-nav {% if active == 'accueil' %}client-nav-active{% endif %}">
+          <svg class="icon-sm"><use href="#i-home"></use></svg> Accueil
+        </a>
+        <a href="{% url 'client_catalogue' %}" class="client-nav {% if active == 'catalogue' %}client-nav-active{% endif %}">
+          <svg class="icon-sm"><use href="#i-grid"></use></svg> Catalogue
+        </a>
+        <a href="{% url 'client_orders' %}" class="client-nav {% if active == 'commandes' %}client-nav-active{% endif %}">
+          <svg class="icon-sm"><use href="#i-receipt"></use></svg> Commandes
+        </a>
+      </nav>
+    </header>
+
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-hairline bg-white">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-6 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <p class="flex items-center gap-2">
+          <svg class="icon-sm h-3.5 w-3.5 text-brand-700"><use href="#i-shield"></use></svg>
+          DPCI · Distribution Pharmaceutique en CI — Espace de démonstration, données fictives.
+        </p>
+        <p class="flex items-center gap-1.5 text-slate-500">
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-phone"></use></svg>
+          Service commercial : +225 27 20 30 40 50
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  {% include "client/cart_drawer.html" %}
+
+  <div id="toast-root" class="pointer-events-none fixed bottom-5 right-5 z-[90] flex w-full max-w-sm flex-col items-end gap-3" aria-live="polite"></div>
+
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
