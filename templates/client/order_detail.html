@@ -1,0 +1,220 @@
+{% extends "client/base.html" %}
+{% load static dpci %}
+
+{% block title %}{{ order.reference }} — Espace client DPCI{% endblock %}
+
+{% block content %}
+<nav class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500" aria-label="Fil d'Ariane">
+  <a href="{% url 'client_orders' %}" class="rounded transition hover:text-brand-700">Mes commandes</a>
+  <svg class="h-3 w-3"><use href="#i-chevron-right"></use></svg>
+  <span class="text-slate-600">{{ order.reference }}</span>
+</nav>
+
+<section class="card mt-3 overflow-hidden">
+  <div class="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-start lg:justify-between">
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <h1 class="text-xl font-extrabold tracking-tight text-navy-900 sm:text-2xl">{{ order.reference }}</h1>
+        <span class="badge {{ order.status_meta.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>{{ order.status_meta.label }}</span>
+      </div>
+      <p class="mt-1.5 text-[12px] text-slate-500">Passée le {{ order.date }} à {{ order.time }} · {{ order.lines }} ligne{{ order.lines|pluralize }} · {{ total_units }} unités</p>
+      <p class="mt-0.5 text-[12px] text-slate-500">Règlement : <span class="font-semibold text-slate-700">{{ order.payment }}</span></p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="tel:+2252720304050" class="btn-secondary h-9 px-3 text-[11px]">
+        <svg class="icon-sm h-3.5 w-3.5"><use href="#i-phone"></use></svg>
+        Contacter le commercial
+      </a>
+      {% if can_download %}
+        <button type="button" class="btn-primary h-9 px-3 text-[11px]" onclick="printOrder(document.getElementById('client-order-print'))">
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-download"></use></svg>
+          Bon de préparation
+        </button>
+      {% else %}
+        <button type="button" class="btn-secondary h-9 cursor-not-allowed px-3 text-[11px]" disabled title="Disponible dès que la commande est prête">
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-download"></use></svg>
+          Bon de préparation
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if cancelled %}
+    <div class="flex items-start gap-2.5 border-t border-rose-100 bg-rose-50 px-4 py-3 text-[12px] text-rose-700 sm:px-5">
+      <svg class="icon-sm mt-0.5 h-4 w-4 shrink-0"><use href="#i-ban"></use></svg>
+      <p><span class="font-bold">Commande annulée.</span> Aucune préparation ni livraison ne sera effectuée. Contactez votre responsable commercial pour toute question.</p>
+    </div>
+  {% else %}
+    <div class="border-t border-hairline bg-slate-50/60 px-4 py-4 sm:px-5">
+      <ol class="flex flex-col gap-2.5 sm:grid sm:grid-cols-5 sm:gap-2">
+        {% for step in steps %}
+          <li class="relative flex items-center gap-2.5 sm:block">
+            <div class="flex items-center sm:w-full">
+              <span class="relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold
+                {% if step.done %}bg-brand-600 text-white
+                {% elif step.current %}bg-white text-brand-700 ring-2 ring-brand-600
+                {% else %}bg-white text-slate-500 ring-1 ring-slate-200{% endif %}">
+                {% if step.done %}
+                  <svg class="h-3 w-3"><use href="#i-check"></use></svg>
+                {% else %}
+                  {{ forloop.counter }}
+                {% endif %}
+              </span>
+              {% if not forloop.last %}
+                <span class="ml-1 hidden h-[2px] flex-1 sm:block {% if step.done %}bg-brand-600{% else %}bg-slate-200{% endif %}"></span>
+              {% endif %}
+            </div>
+            <p class="text-[10px] font-semibold leading-tight sm:mt-2 sm:pr-1 {% if step.current %}text-brand-800{% elif step.done %}text-slate-600{% else %}text-slate-500{% endif %}">{{ step.label }}</p>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  {% endif %}
+</section>
+
+<div class="mt-4 grid gap-4 lg:grid-cols-[1.65fr_1fr]">
+  <section class="card overflow-hidden">
+    <div class="flex items-center justify-between gap-3 border-b border-hairline px-4 py-3.5 sm:px-5">
+      <div>
+        <h2 class="text-sm font-extrabold tracking-tight text-navy-900">Lignes de commande</h2>
+        <p class="mt-0.5 text-[11px] text-slate-500">Lots attribués à la préparation selon la règle FEFO</p>
+      </div>
+      <span class="badge bg-slate-100 text-slate-600 ring-slate-200/70">{{ lines|length }} référence{{ lines|length|pluralize }}</span>
+    </div>
+
+    <div class="hidden grid-cols-[1fr_80px_100px_110px] gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 sm:grid">
+      <span>Produit</span><span class="text-right">Qté</span><span class="text-right">Prix unit.</span><span class="text-right">Total</span>
+    </div>
+
+    <ul class="divide-y divide-slate-100">
+      {% for line in lines %}
+        <li class="flex flex-col gap-2 px-4 py-3 sm:grid sm:grid-cols-[1fr_80px_100px_110px] sm:items-center sm:gap-3 sm:px-5">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+              {% if line.image %}
+                <img src="{% static line.image %}" alt="{{ line.name }}" class="h-full w-full object-cover" width="40" height="40">
+              {% else %}
+                <svg class="icon-sm h-4 w-4 text-slate-500"><use href="#i-pill"></use></svg>
+              {% endif %}
+            </div>
+            <div class="min-w-0">
+              <p class="truncate text-[13px] font-bold text-navy-900">{{ line.name }}</p>
+              <p class="truncate text-[11px] text-slate-500">{{ line.form }} · {{ line.code }}</p>
+              <p class="mt-0.5 text-[10px] text-slate-500">Lot {{ line.lot }} · Péremption {{ line.expiry }}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between pl-12 text-[12px] sm:block sm:pl-0 sm:text-right">
+            <span class="text-slate-500 sm:hidden">Quantité</span>
+            <span class="font-bold tabular-nums text-slate-700">{{ line.qty }}</span>
+          </div>
+          <div class="flex items-center justify-between text-[12px] sm:block sm:text-right">
+            <span class="text-slate-500 sm:hidden">Prix unitaire</span>
+            <span class="tabular-nums text-slate-600">{{ line.price|fcfa }}</span>
+          </div>
+          <div class="flex items-center justify-between text-[12px] sm:block sm:text-right">
+            <span class="text-slate-500 sm:hidden">Total ligne</span>
+            <span class="font-bold tabular-nums text-navy-900">{{ line.total|fcfa }}</span>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <div class="border-t border-hairline bg-slate-50/50 px-4 py-3 text-[11px] text-slate-500 sm:px-5">
+      Les lots affichés sont indicatifs tant que la commande n'est pas préparée. La sortie de stock applique automatiquement le lot dont la date de péremption est la plus proche.
+    </div>
+  </section>
+
+  <div class="space-y-4">
+    <section class="card p-4 sm:p-5">
+      <h2 class="text-sm font-extrabold tracking-tight text-navy-900">Récapitulatif</h2>
+      <dl class="mt-3 space-y-2 text-[12px]">
+        <div class="flex items-center justify-between"><dt class="text-slate-500">Sous-total HT</dt><dd class="font-semibold tabular-nums text-slate-800">{{ order.amount|fcfa }}</dd></div>
+        <div class="flex items-center justify-between"><dt class="text-slate-500">TVA (produits pharmaceutiques)</dt><dd class="font-semibold tabular-nums text-slate-800">0 F</dd></div>
+        <div class="flex items-center justify-between"><dt class="text-slate-500">Livraison</dt><dd class="font-semibold text-emerald-700">Offerte</dd></div>
+        <div class="mt-1 flex items-center justify-between border-t border-slate-100 pt-2.5"><dt class="text-[13px] font-bold text-navy-900">Total à régler</dt><dd class="text-base font-extrabold tabular-nums text-navy-900">{{ order.amount|fcfa }}</dd></div>
+      </dl>
+      <p class="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[10px] leading-5 text-slate-500">Montant indicatif HT. La facture définitive est émise après validation de la préparation.</p>
+    </section>
+
+    <section class="card p-4 sm:p-5">
+      <h2 class="flex items-center gap-2 text-sm font-extrabold tracking-tight text-navy-900">
+        <svg class="icon-sm h-4 w-4 text-brand-700"><use href="#i-truck"></use></svg>
+        Livraison
+      </h2>
+      <p class="mt-3 text-[12px] font-bold text-slate-800">{{ client_name }}</p>
+      <p class="mt-0.5 text-[11px] leading-5 text-slate-500">{{ order.address }}</p>
+      <div class="mt-3 space-y-1 text-[11px] text-slate-500">
+        <p class="flex items-center gap-1.5"><svg class="icon-sm h-3.5 w-3.5 text-slate-500"><use href="#i-user"></use></svg>{{ order.contact }}</p>
+        <p class="flex items-center gap-1.5"><svg class="icon-sm h-3.5 w-3.5 text-slate-500"><use href="#i-phone"></use></svg>{{ order.phone }}</p>
+      </div>
+      <p class="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-[10px] leading-5 text-brand-800">Livraison assurée par la flotte DPCI après préparation et contrôle qualité.</p>
+    </section>
+  </div>
+</div>
+
+<template id="client-order-print">
+  <div class="text-slate-900">
+    <div class="flex items-start justify-between border-b-2 border-navy-900 pb-4">
+      <div>
+        <p class="text-lg font-extrabold tracking-[0.18em] text-navy-900">DPCI</p>
+        <p class="mt-0.5 text-[9px] uppercase tracking-[0.14em] text-slate-500">Distribution Pharmaceutique en CI</p>
+        <p class="mt-2 text-[9px] leading-4 text-slate-500">Boulevard de Marseille, Zone 3<br>Abidjan, Côte d'Ivoire<br>+225 27 20 30 40 50</p>
+      </div>
+      <div class="text-right">
+        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700">Bon de commande</p>
+        <p class="mt-1 text-lg font-extrabold text-navy-900">{{ order.reference }}</p>
+        <p class="mt-1 text-[9px] text-slate-500">Émis le {{ order.date }} à {{ order.time }}</p>
+        <p class="mt-1 inline-block rounded border border-slate-300 px-2 py-0.5 text-[9px] font-bold text-slate-700">{{ order.status_meta.label }}</p>
+      </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 gap-6 text-[10px]">
+      <div>
+        <p class="text-[8px] font-bold uppercase tracking-[0.14em] text-slate-500">Client</p>
+        <p class="mt-1 text-[11px] font-bold text-navy-900">{{ client_name }}</p>
+        <p class="mt-0.5 leading-4 text-slate-600">{{ order.contact }}<br>{{ order.phone }}<br>{{ account.email }}</p>
+      </div>
+      <div>
+        <p class="text-[8px] font-bold uppercase tracking-[0.14em] text-slate-500">Adresse de livraison</p>
+        <p class="mt-1 leading-4 text-slate-600">{{ order.address }}</p>
+        <p class="mt-1 leading-4 text-slate-600">Règlement : {{ order.payment }}</p>
+      </div>
+    </div>
+
+    <table class="mt-5 w-full border-collapse text-[10px]">
+      <thead>
+        <tr class="bg-slate-100 text-left text-[8px] uppercase tracking-[0.1em] text-slate-500">
+          <th class="border border-slate-200 px-2 py-1.5">Produit</th>
+          <th class="border border-slate-200 px-2 py-1.5">Code</th>
+          <th class="border border-slate-200 px-2 py-1.5 text-right">Qté</th>
+          <th class="border border-slate-200 px-2 py-1.5 text-right">Prix unit.</th>
+          <th class="border border-slate-200 px-2 py-1.5 text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+          <tr>
+            <td class="border border-slate-200 px-2 py-1.5"><span class="font-semibold">{{ line.name }}</span><br><span class="text-slate-500">{{ line.form }}</span></td>
+            <td class="border border-slate-200 px-2 py-1.5 text-slate-600">{{ line.code }}</td>
+            <td class="border border-slate-200 px-2 py-1.5 text-right tabular-nums">{{ line.qty }}</td>
+            <td class="border border-slate-200 px-2 py-1.5 text-right tabular-nums">{{ line.price|fcfa }}</td>
+            <td class="border border-slate-200 px-2 py-1.5 text-right font-semibold tabular-nums">{{ line.total|fcfa }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="mt-3 flex justify-end">
+      <div class="w-56">
+        <div class="flex justify-between border-b border-slate-200 py-1 text-[10px]"><span class="text-slate-500">Sous-total HT</span><span class="font-semibold tabular-nums">{{ order.amount|fcfa }}</span></div>
+        <div class="flex justify-between border-b border-slate-200 py-1 text-[10px]"><span class="text-slate-500">TVA</span><span class="font-semibold tabular-nums">0 F</span></div>
+        <div class="flex justify-between py-1.5 text-[11px] font-extrabold"><span>Total</span><span class="tabular-nums">{{ order.amount|fcfa }}</span></div>
+      </div>
+    </div>
+
+    <p class="mt-6 border-t border-slate-200 pt-2 text-[8px] leading-4 text-slate-500">
+      Document de démonstration. Les lots sont attribués selon la règle FEFO lors de la préparation. La facture définitive est émise après contrôle qualité et validation de la livraison.
+    </p>
+  </div>
+</template>
+{% endblock %}

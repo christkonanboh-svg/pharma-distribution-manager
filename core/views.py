@@ -1,7 +1,8 @@
+import json
 from datetime import date
 from functools import wraps
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -38,6 +39,11 @@ def current_user(request):
     return request.session.get("demo_user")
 
 
+def actor_of(user):
+    """Acteur du cahier des charges : client, commercial, admin ou staff."""
+    return (user or {}).get("actor", "staff")
+
+
 def demo_login_required(view):
     @wraps(view)
     def wrapper(request, *args, **kwargs):
@@ -47,6 +53,33 @@ def demo_login_required(view):
         return view(request, *args, **kwargs)
 
     return wrapper
+
+
+def role_required(*roles):
+    """Réserve une vue à certains acteurs et redirige les autres vers leur espace."""
+
+    def decorator(view):
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            user = current_user(request)
+            if not user:
+                login_url = reverse("login")
+                return redirect(f"{login_url}?next={request.path}")
+            actor = actor_of(user)
+            if actor in roles:
+                return view(request, *args, **kwargs)
+            if actor == "client":
+                return redirect("client_home")
+            return redirect("dashboard")
+
+        return wrapper
+
+    return decorator
+
+
+staff_required = role_required("commercial", "admin", "staff")
+admin_required = role_required("admin")
+client_required = role_required("client")
 
 
 def base_context(request, active_nav, nav_title, nav_subtitle, **extra):
@@ -60,14 +93,16 @@ def base_context(request, active_nav, nav_title, nav_subtitle, **extra):
 
 
 def root_view(request):
-    if current_user(request):
-        return redirect("dashboard")
+    user = current_user(request)
+    if user:
+        return redirect("client_home" if actor_of(user) == "client" else "dashboard")
     return redirect("login")
 
 
 def login_view(request):
-    if current_user(request):
-        return redirect("dashboard")
+    user = current_user(request)
+    if user:
+        return redirect("client_home" if actor_of(user) == "client" else "dashboard")
 
     next_url = request.POST.get("next") or request.GET.get("next") or ""
     error = None
@@ -84,6 +119,8 @@ def login_view(request):
                 "role": account["role"],
                 "initials": account["initials"],
                 "email": account["email"],
+                "actor": account.get("actor", "staff"),
+                "client": account.get("client", ""),
             }
             if next_url and url_has_allowed_host_and_scheme(
                 next_url,
@@ -91,29 +128,47 @@ def login_view(request):
                 require_https=request.is_secure(),
             ):
                 return redirect(next_url)
+            if account.get("actor") == "client":
+                return redirect("client_home")
             return redirect("dashboard")
 
         error = "Identifiant ou mot de passe incorrect. Utilisez un compte de démonstration."
 
-    accounts = [
-        {
+    groups = {
+        "client": {
+            "label": "Pharmacies et structures clientes",
+            "hint": "Catalogue, panier et suivi de commandes",
+            "accounts": [],
+        },
+        "team": {
+            "label": "Équipe DPCI",
+            "hint": "Back-office : commandes, stock, traçabilité",
+            "accounts": [],
+        },
+    }
+    for username, account in data.DEMO_ACCOUNTS.items():
+        row = {
             "username": username,
             "name": account["name"],
             "role": account["role"],
             "initials": account["initials"],
+            "actor": account.get("actor", "staff"),
         }
-        for username, account in data.DEMO_ACCOUNTS.items()
-    ]
+        if account.get("actor") == "client":
+            groups["client"]["accounts"].append(row)
+        else:
+            groups["team"]["accounts"].append(row)
 
     return render(
         request,
         "pages/login.html",
         {
-            "accounts": accounts,
+            "account_groups": [groups["client"], groups["team"]],
             "demo_password": "demo1234",
             "error": error,
             "next": next_url,
             "logged_out": request.GET.get("deconnecte") == "1",
+            "portal_notice": request.GET.get("portail") == "client",
         },
     )
 
@@ -123,7 +178,7 @@ def logout_view(request):
     return redirect(f"{reverse('login')}?deconnecte=1")
 
 
-@demo_login_required
+@staff_required
 def dashboard_view(request):
     user = current_user(request)
     today = date.today()
@@ -157,7 +212,7 @@ def dashboard_view(request):
     return render(request, "pages/dashboard.html", context)
 
 
-@demo_login_required
+@staff_required
 def commandes_view(request):
     user = current_user(request)
     query = request.GET.get("q", "")
@@ -195,6 +250,7 @@ def commandes_view(request):
         "active_client": client,
         "status_tabs": status_tab_items,
         "status_counts": counts,
+        "order_steps": data.ORDER_STEPS,
         "all_count": all_count,
         "clients": data.clients(),
         "urgent_count": sum(1 for order in orders if order["priority"] == "Haute"),
@@ -207,7 +263,7 @@ def commandes_view(request):
     return render(request, "pages/commandes.html", context)
 
 
-@demo_login_required
+@staff_required
 def commande_detail_view(request, pk):
     order = data.get_order(pk)
     if not order:
@@ -218,7 +274,7 @@ def commande_detail_view(request, pk):
     return render(request, "partials/commande_detail.html", {"order": order})
 
 
-@demo_login_required
+@staff_required
 def alertes_view(request):
     category = request.GET.get("category", "")
     query = request.GET.get("q", "")
@@ -274,7 +330,7 @@ def alertes_view(request):
     return render(request, "pages/alertes.html", context)
 
 
-@demo_login_required
+@staff_required
 def preparation_view(request):
     prep = data.decorate_prep(data.PREPARATION)
     context = base_context(
@@ -289,7 +345,7 @@ def preparation_view(request):
     return render(request, "pages/preparation.html", context)
 
 
-@demo_login_required
+@staff_required
 def livraisons_view(request):
     status = request.GET.get("status", "")
     query = request.GET.get("q", "")
@@ -325,7 +381,7 @@ def livraisons_view(request):
     return render(request, "pages/livraisons.html", context)
 
 
-@demo_login_required
+@staff_required
 def stock_lots_view(request):
     query = request.GET.get("q", "")
     category = request.GET.get("category", "")
@@ -355,7 +411,7 @@ def stock_lots_view(request):
     return render(request, "pages/stock_lots.html", context)
 
 
-@demo_login_required
+@staff_required
 def reception_lot_view(request):
     products = data.REFERENCE_PRODUCTS
     selected_code = request.GET.get("product", products[0]["code"])
@@ -379,7 +435,7 @@ def reception_lot_view(request):
     return render(request, "pages/reception_lot.html", context)
 
 
-@demo_login_required
+@staff_required
 def tracabilite_view(request):
     trace = data.trace_for_query(request.GET.get("q", ""))
     lot = trace["lot"]
@@ -398,7 +454,7 @@ def tracabilite_view(request):
     return render(request, "pages/tracabilite.html", context)
 
 
-@demo_login_required
+@staff_required
 def rappel_lot_view(request):
     context = base_context(
         request,
@@ -410,7 +466,7 @@ def rappel_lot_view(request):
     return render(request, "pages/rappel_lot.html", context)
 
 
-@demo_login_required
+@staff_required
 def referentiels_view(request):
     query = request.GET.get("q", "")
     category = request.GET.get("category", "")
@@ -461,7 +517,7 @@ def referentiels_view(request):
     return render(request, "pages/referentiels.html", context)
 
 
-@demo_login_required
+@admin_required
 def administration_view(request):
     query = request.GET.get("q", "").strip().lower()
     role = request.GET.get("role", "")
@@ -490,7 +546,7 @@ def administration_view(request):
     return render(request, "pages/admin.html", context)
 
 
-@demo_login_required
+@staff_required
 def commande_nouvelle_view(request):
     context = base_context(
         request,
@@ -505,7 +561,7 @@ def commande_nouvelle_view(request):
     return render(request, "pages/commande_nouvelle.html", context)
 
 
-@demo_login_required
+@staff_required
 def commande_page_view(request, pk):
     detail = data.commande_page_context(pk)
     if not detail:
@@ -521,3 +577,180 @@ def commande_page_view(request, pk):
         **detail,
     )
     return render(request, "pages/commande_detail.html", context)
+
+# ---------------------------------------------------------------------------
+# Portail client (pharmacies et structures de santé)
+# ---------------------------------------------------------------------------
+
+
+def client_context(request, active, page_title, page_subtitle, **extra):
+    user = current_user(request)
+    account = data.DEMO_ACCOUNTS.get(user["username"], {}) if user else {}
+    client_name = account.get("client", "")
+    return {
+        "user": user,
+        "account": account,
+        "client_name": client_name,
+        "summary": data.client_summary(client_name) if client_name else None,
+        "active": active,
+        "page_title": page_title,
+        "page_subtitle": page_subtitle,
+        "categories": data.catalog_categories(),
+        **extra,
+    }
+
+
+@client_required
+def client_home_view(request):
+    catalog = data.product_catalog()
+    context = client_context(
+        request,
+        "accueil",
+        "Bonjour",
+        "Votre espace de commande DPCI",
+        featured=catalog[:4],
+        catalog_count=len(catalog),
+        category_count=len(data.catalog_categories()),
+        today=date.today(),
+    )
+    return render(request, "client/home.html", context)
+
+
+@client_required
+def client_catalogue_view(request):
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("categorie", "").strip()
+    catalog = data.product_catalog()
+
+    if query:
+        needle = query.lower()
+        catalog = [
+            product
+            for product in catalog
+            if needle in product["name"].lower()
+            or needle in product["code"].lower()
+            or needle in product["category"].lower()
+        ]
+    if category:
+        catalog = [product for product in catalog if product["category"] == category]
+
+    counts = {}
+    for product in data.product_catalog():
+        counts[product["category"]] = counts.get(product["category"], 0) + 1
+
+    context = client_context(
+        request,
+        "catalogue",
+        "Catalogue",
+        "Produits disponibles à la commande",
+        products=catalog,
+        query=query,
+        selected_category=category,
+        category_options=[
+            {"name": name, "count": counts[name]} for name in data.catalog_categories()
+        ],
+        total_products=len(data.product_catalog()),
+    )
+    return render(request, "client/catalogue.html", context)
+
+
+@client_required
+def client_orders_view(request):
+    client_name = data.DEMO_ACCOUNTS.get(current_user(request)["username"], {}).get("client", "")
+    orders = data.client_orders(client_name)
+    status = request.GET.get("statut", "")
+    query = request.GET.get("q", "").strip()
+
+    if status not in data.STATUS_META:
+        status = ""
+    if status:
+        orders = [order for order in orders if order["status"] == status]
+    if query:
+        needle = query.lower()
+        orders = [
+            order
+            for order in orders
+            if needle in order["reference"].lower()
+            or any(needle in product["name"].lower() for product in order["products"])
+        ]
+
+    all_orders = data.client_orders(client_name)
+    context = client_context(
+        request,
+        "commandes",
+        "Mes commandes",
+        "Suivi de vos commandes et livraisons",
+        orders=orders,
+        status=status,
+        query=query,
+        status_meta=data.STATUS_META,
+        counts={
+            key: len([order for order in all_orders if order["status"] == key])
+            for key in data.STATUS_META
+        },
+        total_count=len(all_orders),
+    )
+    return render(request, "client/orders.html", context)
+
+
+@client_required
+def client_order_detail_view(request, reference):
+    client_name = data.DEMO_ACCOUNTS.get(current_user(request)["username"], {}).get("client", "")
+    detail = data.client_order_detail(reference, client_name)
+    if not detail:
+        return render(
+            request,
+            "client/order_missing.html",
+            client_context(
+                request,
+                "commandes",
+                "Commande introuvable",
+                "Cette commande n'existe pas dans votre historique",
+            ),
+            status=404,
+        )
+    context = client_context(
+        request,
+        "commandes",
+        detail["order"]["reference"],
+        "Suivi de votre commande",
+        **detail,
+    )
+    return render(request, "client/order_detail.html", context)
+
+
+@client_required
+def client_order_create_view(request):
+    if request.method != "POST":
+        return redirect("client_catalogue")
+
+    client_name = data.DEMO_ACCOUNTS.get(current_user(request)["username"], {}).get("client", "")
+    payload = {}
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+        except (ValueError, UnicodeDecodeError):
+            payload = {}
+    else:
+        payload = {"items": [{"code": request.POST.get("code"), "qty": request.POST.get("qty", 1)}]}
+
+    items = payload.get("items") or []
+    if not isinstance(items, list):
+        items = []
+    order = data.create_client_order(client_name, items)
+
+    if not order:
+        message = "Votre panier est vide ou les quantités demandées ne sont plus disponibles."
+        if "application/json" in (request.content_type or ""):
+            return JsonResponse({"ok": False, "error": message}, status=400)
+        return redirect("client_catalogue")
+
+    if "application/json" in (request.content_type or ""):
+        return JsonResponse(
+            {
+                "ok": True,
+                "reference": order["reference"],
+                "redirect": reverse("client_order_detail", kwargs={"reference": order["reference"]}),
+            }
+        )
+    return redirect("client_order_detail", reference=order["reference"])

@@ -6,4 +6,6 @@ __pycache__/
 venv/
 node_modules/
 staticfiles/
+.playwright-cli/
+.impeccable/
 .DS_Store

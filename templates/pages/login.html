@@ -176,20 +176,30 @@
           <div class="h-px flex-1 bg-slate-200"></div>
         </div>
 
-        <div class="grid gap-2">
-          {% for account in accounts %}
-            <button
-              type="button"
-              class="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
-              @click="fill('{{ account.username }}', '{{ demo_password }}')"
-            >
-              <span class="grid h-9 w-9 place-items-center rounded-lg bg-slate-900 text-[10px] font-bold text-white transition group-hover:bg-brand-700">{{ account.initials }}</span>
-              <span class="min-w-0 flex-1">
-                <span class="block truncate text-xs font-bold text-slate-800">{{ account.name }}</span>
-                <span class="block truncate text-[10px] text-slate-500">{{ account.role }}</span>
-              </span>
-              <span class="rounded-md bg-slate-100 px-1.5 py-1 text-[9px] font-bold text-slate-500 transition group-hover:bg-brand-100 group-hover:text-brand-700">{{ account.username }}</span>
-            </button>
+        <div class="space-y-4">
+          {% for group in account_groups %}
+            <div>
+              <div class="mb-2 flex items-baseline justify-between gap-3 px-0.5">
+                <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{{ group.label }}</p>
+                <p class="truncate text-[10px] text-slate-400">{{ group.hint }}</p>
+              </div>
+              <div class="grid gap-2">
+                {% for account in group.accounts %}
+                  <button
+                    type="button"
+                    class="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition hover:border-brand-300 hover:bg-brand-50/40"
+                    @click="fill('{{ account.username }}', '{{ demo_password }}')"
+                  >
+                    <span class="grid h-9 w-9 place-items-center rounded-lg {% if account.actor == 'client' %}bg-brand-700{% else %}bg-slate-900{% endif %} text-[10px] font-bold text-white transition group-hover:bg-brand-700">{{ account.initials }}</span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate text-xs font-bold text-slate-800">{{ account.name }}</span>
+                      <span class="block truncate text-[10px] text-slate-500">{{ account.role }}</span>
+                    </span>
+                    <span class="rounded-md bg-slate-100 px-1.5 py-1 text-[9px] font-bold text-slate-500 transition group-hover:bg-brand-100 group-hover:text-brand-700">{{ account.username }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
           {% endfor %}
         </div>
 

@@ -1,0 +1,17 @@
+{% extends "client/base.html" %}
+
+{% block title %}Commande introuvable — Espace client DPCI{% endblock %}
+
+{% block content %}
+<div class="mx-auto mt-10 flex max-w-lg flex-col items-center rounded-xl border border-slate-200/80 bg-white px-6 py-14 text-center shadow-card">
+  <span class="grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-600">
+    <svg class="h-6 w-6"><use href="#i-alert"></use></svg>
+  </span>
+  <h1 class="mt-4 text-lg font-extrabold tracking-tight text-navy-900">Commande introuvable</h1>
+  <p class="mt-2 max-w-sm text-xs leading-5 text-slate-500">Cette commande n'existe pas dans l'historique de {{ client_name }}, ou sa référence a changé. Vérifiez la référence depuis la liste de vos commandes.</p>
+  <div class="mt-5 flex flex-wrap justify-center gap-2">
+    <a href="{% url 'client_orders' %}" class="btn-primary">Mes commandes</a>
+    <a href="{% url 'client_catalogue' %}" class="btn-secondary">Parcourir le catalogue</a>
+  </div>
+</div>
+{% endblock %}

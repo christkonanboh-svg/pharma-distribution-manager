@@ -1,3 +1,7 @@
+from datetime import datetime
+
+# Acteurs : « client » (pharmacie ou structure de santé), « commercial »,
+# « admin », et « staff » pour les autres rôles internes du cahier des charges.
 DEMO_ACCOUNTS = {
     "a.konan": {
         "password": "demo1234",
@@ -5,6 +9,15 @@ DEMO_ACCOUNTS = {
         "role": "Responsable commerciale",
         "initials": "AK",
         "email": "a.konan@dpci.ci",
+        "actor": "commercial",
+    },
+    "admin": {
+        "password": "demo1234",
+        "name": "Administrateur DPCI",
+        "role": "Administrateur",
+        "initials": "AD",
+        "email": "admin@dpci.ci",
+        "actor": "admin",
     },
     "p.koffi": {
         "password": "demo1234",
@@ -12,6 +25,7 @@ DEMO_ACCOUNTS = {
         "role": "Pharmacien responsable",
         "initials": "PK",
         "email": "p.koffi@dpci.ci",
+        "actor": "staff",
     },
     "m.diabate": {
         "password": "demo1234",
@@ -19,6 +33,49 @@ DEMO_ACCOUNTS = {
         "role": "Responsable magasin",
         "initials": "MD",
         "email": "m.diabate@dpci.ci",
+        "actor": "staff",
+    },
+    "pharmacie.plateau": {
+        "password": "demo1234",
+        "name": "Pharmacie du Plateau",
+        "role": "Client — Pharmacie",
+        "initials": "PP",
+        "email": "contact@pharmacie-plateau.ci",
+        "actor": "client",
+        "client": "Pharmacie du Plateau",
+        "city": "Plateau",
+        "contact": "Dr Yao Kouassi",
+        "phone": "+225 07 08 45 12 90",
+        "address": "Boulevard Lagunaire, Plateau, Abidjan",
+        "payment": "À crédit 30 jours",
+    },
+    "chu.treichville": {
+        "password": "demo1234",
+        "name": "CHU de Treichville",
+        "role": "Client — Structure de santé",
+        "initials": "CT",
+        "email": "pharmacie@chu-treichville.ci",
+        "actor": "client",
+        "client": "CHU de Treichville",
+        "city": "Treichville",
+        "contact": "Dr Aminata Bakayoko",
+        "phone": "+225 27 22 44 90 10",
+        "address": "Boulevard de Marseille, Treichville, Abidjan",
+        "payment": "À crédit 60 jours",
+    },
+    "pharmacie.palmiers": {
+        "password": "demo1234",
+        "name": "Pharmacie Les Palmiers",
+        "role": "Client — Pharmacie",
+        "initials": "LP",
+        "email": "lespalmiers@pharma.ci",
+        "actor": "client",
+        "client": "Pharmacie Les Palmiers",
+        "city": "Abobo",
+        "contact": "M. Koffi N'Guessan",
+        "phone": "+225 27 21 33 12 40",
+        "address": "Avenue des Palmiers, Abobo, Abidjan",
+        "payment": "À crédit 30 jours",
     },
 }
 
@@ -82,6 +139,32 @@ STATUS_TABS = [
     ("livree", "Livrées"),
     ("annulee", "Annulées"),
 ]
+
+# Parcours du cahier des charges, affiché dans le panneau dépliable des commandes.
+ORDER_STEPS = [
+    {"key": "brouillon", "label": "Brouillon"},
+    {"key": "validee", "label": "Validée"},
+    {"key": "preparation", "label": "En préparation"},
+    {"key": "prete", "label": "Prête"},
+    {"key": "expediee", "label": "Expédiée"},
+    {"key": "livree", "label": "Livrée"},
+]
+
+# Correspondance entre les statuts métier actuels et les étapes du parcours du
+# cahier des charges (index dans ORDER_STEPS).
+#
+# À noter : le statut « Validée » du CDC n'existe pas encore dans les données.
+# Il sera ajouté en T-07. En attendant, « En attente » est rattaché à l'étape
+# « Brouillon » (commande créée, en attente de validation).
+# La valeur -1 marque une commande annulée : aucune étape n'est active.
+STATUS_STEP = {
+    "attente": 0,
+    "preparation": 2,
+    "prete": 3,
+    "expediee": 4,
+    "livree": 5,
+    "annulee": -1,
+}
 
 ORDERS = [
     {
@@ -508,6 +591,7 @@ def decorate(order):
     item["initials"] = _initials(order["client"])
     item["items_preview"] = order["products"][:3]
     item["remaining_products"] = max(0, len(order["products"]) - 3)
+    item["step_index"] = STATUS_STEP.get(order["status"], 0)
     return item
 
 
@@ -1468,3 +1552,202 @@ def commande_page_context(order_id):
             {"title": "Bon de livraison", "detail": "À générer après confirmation", "ready": False},
         ],
     }
+
+# ---------------------------------------------------------------------------
+# Portail client â€” catalogue, commandes et suivi (pharmacies / structures)
+# ---------------------------------------------------------------------------
+
+PRODUCT_IMAGES = {
+    "PAR-1000": "img/products/par-1000.svg",
+    "AMO-500": "img/products/amo-500.svg",
+    "OME-020": "img/products/ome-020.svg",
+    "ART-020": "img/products/art-020.svg",
+    "PAR-500": "img/products/par-500.svg",
+    "IBU-400": "img/products/ibu-400.svg",
+    "CIP-500": "img/products/cip-500.svg",
+    "SER-09": "img/products/ser-09.svg",
+}
+
+CLIENT_ORDER_STEPS = [
+    "En attente",
+    "En prÃ©paration",
+    "PrÃªte",
+    "ExpÃ©diÃ©e",
+    "LivrÃ©e",
+]
+
+
+def product_catalog():
+    """Catalogue public du portail client, enrichi du visuel produit."""
+    return [
+        {**product, "image": PRODUCT_IMAGES.get(product["code"], "")}
+        for product in REFERENCE_PRODUCTS
+    ]
+
+
+def catalog_categories():
+    return sorted({product["category"] for product in REFERENCE_PRODUCTS})
+
+
+def client_orders(client_name):
+    return [order for order in all_orders() if order["client"] == client_name]
+
+
+def client_summary(client_name):
+    orders = client_orders(client_name)
+    active = [order for order in orders if order["status"] not in ("livree", "annulee")]
+    delivered = [order for order in orders if order["status"] == "livree"]
+    next_order = next(
+        (
+            order
+            for order in active
+            if order["status"] in ("expediee", "prete", "preparation")
+        ),
+        active[0] if active else None,
+    )
+    return {
+        "orders": orders,
+        "recent": orders[:4],
+        "active": active,
+        "active_count": len(active),
+        "delivered_count": len(delivered),
+        "total": sum(order["amount"] for order in orders),
+        "next": next_order,
+    }
+
+
+def client_order_detail(reference, client_name):
+    order = next(
+        (
+            item
+            for item in all_orders()
+            if item["reference"] == reference and item["client"] == client_name
+        ),
+        None,
+    )
+    if not order:
+        return None
+
+    status_index = {
+        "attente": 0,
+        "preparation": 1,
+        "prete": 2,
+        "expediee": 3,
+        "livree": 4,
+        "annulee": -1,
+    }.get(order["status"], -1)
+    steps = [
+        {
+            "label": label,
+            "done": index < status_index,
+            "current": index == status_index,
+        }
+        for index, label in enumerate(CLIENT_ORDER_STEPS)
+    ]
+    catalog_by_name = {product["name"]: product for product in REFERENCE_PRODUCTS}
+    lines = []
+    for product in order["products"]:
+        code = product.get("code") or catalog_by_name.get(product.get("name"), {}).get("code", "")
+        lines.append(
+            {
+                **product,
+                "code": code,
+                "total": product["qty"] * product["price"],
+                "image": PRODUCT_IMAGES.get(code, ""),
+            }
+        )
+    return {
+        "order": order,
+        "lines": lines,
+        "steps": steps,
+        "cancelled": order["status"] == "annulee",
+        "can_download": order["status"] in ("prete", "expediee", "livree"),
+        "total_units": sum(line["qty"] for line in lines),
+    }
+
+
+def create_client_order(client_name, items):
+    """CrÃ©e une commande client Ã  partir des lignes du panier (dÃ©mo en mÃ©moire)."""
+    catalog = {product["code"]: product for product in REFERENCE_PRODUCTS}
+    account = next(
+        (
+            account
+            for account in DEMO_ACCOUNTS.values()
+            if account.get("client") == client_name
+        ),
+        {},
+    )
+
+    lines = []
+    for raw in items:
+        code = str(raw.get("code", "")).strip()
+        try:
+            qty = int(raw.get("qty", 0))
+        except (TypeError, ValueError):
+            continue
+        product = catalog.get(code)
+        if not product or qty <= 0:
+            continue
+        qty = min(qty, int(product["stock"]))
+        if qty <= 0:
+            continue
+        lines.append(
+            {
+                "code": code,
+                "name": product["name"],
+                "form": product["form"],
+                "lot": "Ã€ prÃ©lever",
+                "expiry": "â€”",
+                "qty": qty,
+                "price": product["price"],
+            }
+        )
+
+    if not lines:
+        return None
+
+    now = datetime.now()
+    months = [
+        "janv.",
+        "fÃ©vr.",
+        "mars",
+        "avr.",
+        "mai",
+        "juin",
+        "juil.",
+        "aoÃ»t",
+        "sept.",
+        "oct.",
+        "nov.",
+        "dÃ©c.",
+    ]
+    max_id = max((order["id"] for order in ORDERS), default=0)
+    max_seq = max(
+        (int(order["reference"].rsplit("-", 1)[-1]) for order in ORDERS),
+        default=0,
+    )
+    order = {
+        "id": max_id + 1,
+        "reference": f"CMD-2026-{max_seq + 1:04d}",
+        "client": client_name,
+        "client_type": (
+            "Pharmacie" if "Pharmacie" in client_name else "Structure de santÃ©"
+        ),
+        "city": account.get("city", ""),
+        "date": f"{now.day} {months[now.month - 1]} {now.year}",
+        "time": now.strftime("%H:%M"),
+        "amount": sum(line["qty"] * line["price"] for line in lines),
+        "status": "attente",
+        "priority": "Normale",
+        "lines": len(lines),
+        "units": sum(line["qty"] for line in lines),
+        "progress": 8,
+        "payment": account.get("payment", "Ã€ crÃ©dit 30 jours"),
+        "contact": account.get("contact", ""),
+        "phone": account.get("phone", ""),
+        "address": account.get("address", ""),
+        "products": lines,
+    }
+    ORDERS.insert(0, order)
+    return decorate(order)
+

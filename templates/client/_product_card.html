@@ -1,0 +1,53 @@
+{% load static dpci %}
+<article class="group flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card transition duration-200 hover:border-slate-300 hover:shadow-soft">
+  <a href="{% url 'client_catalogue' %}?q={{ product.code }}" class="relative block aspect-[4/3] overflow-hidden border-b border-slate-100 bg-slate-50">
+    <img
+      src="{% static product.image %}"
+      alt="{{ product.name }}"
+      class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+      loading="lazy"
+      width="480"
+      height="360"
+    >
+    <span class="absolute left-2.5 top-2.5">
+      {% if product.stock == 0 %}
+        <span class="badge bg-rose-50 text-rose-700 ring-rose-200/70"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> Rupture</span>
+      {% elif product.status == 'low' %}
+        <span class="badge bg-amber-50 text-amber-700 ring-amber-200/70"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> Stock limité</span>
+      {% else %}
+        <span class="badge bg-white/90 text-emerald-700 ring-emerald-200/70 backdrop-blur"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Disponible</span>
+      {% endif %}
+    </span>
+  </a>
+  <div class="flex flex-1 flex-col p-3.5">
+    <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-700">{{ product.category }}</p>
+    <h3 class="mt-1 text-[13px] font-bold leading-snug text-navy-900">{{ product.name }}</h3>
+    <p class="mt-0.5 text-[11px] text-slate-500">{{ product.form }} · {{ product.code }}</p>
+
+    <div class="mt-auto flex items-end justify-between gap-2 pt-3">
+      <div>
+        <p class="text-base font-extrabold tabular-nums tracking-tight text-navy-900">{{ product.price|fcfa }}</p>
+        <p class="text-[10px] text-slate-500">HT · Stock {{ product.stock }}</p>
+      </div>
+      {% if product.stock == 0 %}
+        <button type="button" class="btn-secondary h-9 cursor-not-allowed px-3 text-[11px]" disabled>Indisponible</button>
+      {% else %}
+        <button
+          type="button"
+          class="btn-primary h-9 px-3 text-[11px]"
+          @click="$store.cart.add({
+            code: '{{ product.code|escapejs }}',
+            name: '{{ product.name|escapejs }}',
+            form: '{{ product.form|escapejs }}',
+            price: {{ product.price }},
+            stock: {{ product.stock }},
+            image: '{% static product.image %}'
+          })"
+        >
+          <svg class="h-3.5 w-3.5"><use href="#i-plus"></use></svg>
+          Ajouter
+        </button>
+      {% endif %}
+    </div>
+  </div>
+</article>

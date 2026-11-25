@@ -37,10 +37,15 @@ module.exports = {
           900: "#0f172a",
           950: "#080e1d",
         },
+        canvas: "#f6f8fa",
+        surface: "#ffffff",
+        hairline: "#e6eaf0",
       },
       boxShadow: {
-        soft: "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12)",
-        lift: "0 2px 4px rgba(15, 23, 42, 0.04), 0 20px 40px -20px rgba(15, 23, 42, 0.24)",
+        soft: "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px -18px rgba(15, 23, 42, 0.18)",
+        card: "0 1px 2px rgba(15, 23, 42, 0.03), 0 1px 3px rgba(15, 23, 42, 0.04)",
+        lift: "0 2px 6px rgba(15, 23, 42, 0.05), 0 24px 48px -24px rgba(15, 23, 42, 0.22)",
+        panel: "0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 40px -16px rgba(15, 23, 42, 0.18)",
         glow: "0 0 0 1px rgba(16, 172, 148, 0.12), 0 12px 36px -12px rgba(16, 172, 148, 0.5)",
       },
       keyframes: {
@@ -76,7 +81,7 @@ module.exports = {
         },
       },
       animation: {
-        "fade-up": "fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "fade-up": "fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both",
         "fade-in": "fade-in 0.4s ease-out both",
         float: "float 7s ease-in-out infinite",
         shimmer: "shimmer 2.4s linear infinite",

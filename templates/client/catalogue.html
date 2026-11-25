@@ -1,0 +1,82 @@
+{% extends "client/base.html" %}
+{% load dpci %}
+
+{% block title %}Catalogue — Espace client DPCI{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700">Commander</p>
+    <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-navy-900 sm:text-[28px]">Catalogue produits</h1>
+    <p class="mt-1 text-sm text-slate-500">{{ total_products }} références disponibles pour {{ client_name }}. Prix HT, TVA 0 %.</p>
+  </div>
+  <a href="{% url 'client_orders' %}" class="btn-secondary shrink-0 self-start sm:self-auto">
+    <svg class="icon-sm h-4 w-4"><use href="#i-receipt"></use></svg>
+    Mes commandes
+  </a>
+</div>
+
+<form method="get" action="{% url 'client_catalogue' %}" class="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+  <div class="relative flex-1">
+    <svg class="field-icon"><use href="#i-search"></use></svg>
+    <input type="search" name="q" value="{{ query }}" class="field h-11 pl-10" placeholder="Rechercher un produit, une catégorie, un code…" aria-label="Rechercher un produit">
+    {% if selected_category %}<input type="hidden" name="categorie" value="{{ selected_category }}">{% endif %}
+  </div>
+  <div class="flex items-center gap-2">
+    <button type="submit" class="btn-primary h-11 px-4">Rechercher</button>
+    {% if query or selected_category %}
+      <a href="{% url 'client_catalogue' %}" class="btn-ghost h-11 px-3 text-slate-500">Réinitialiser</a>
+    {% endif %}
+  </div>
+</form>
+
+<div class="mt-4 flex flex-wrap items-center gap-1.5">
+  <a href="{% url 'client_catalogue' %}{% if query %}?q={{ query|urlencode }}{% endif %}" class="client-chip {% if not selected_category %}client-chip-active{% endif %}">
+    Tous <span class="client-chip-count">{{ total_products }}</span>
+  </a>
+  {% for option in category_options %}
+    <a href="{% url 'client_catalogue' %}?categorie={{ option.name|urlencode }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="client-chip {% if selected_category == option.name %}client-chip-active{% endif %}">
+      {{ option.name }} <span class="client-chip-count">{{ option.count }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+{% if products %}
+  <div class="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+    {% for product in products %}
+      {% include "client/_product_card.html" with product=product %}
+    {% endfor %}
+  </div>
+  <p class="mt-6 flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-[11px] text-slate-500">
+    <svg class="icon-sm h-4 w-4 shrink-0 text-brand-700"><use href="#i-shield"></use></svg>
+    Les lots sont attribués selon la règle FEFO (premier expiré, premier sorti) au moment de la préparation. Les quantités sont limitées au stock disponible.
+  </p>
+{% else %}
+  <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+    <span class="grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+      <svg class="h-6 w-6"><use href="#i-search"></use></svg>
+    </span>
+    <p class="mt-4 text-sm font-bold text-navy-900">Aucun produit trouvé</p>
+    <p class="mt-1 max-w-sm text-xs leading-5 text-slate-500">Aucune référence ne correspond à « {{ query }} »{% if selected_category %} dans la catégorie {{ selected_category }}{% endif %}.</p>
+    <a href="{% url 'client_catalogue' %}" class="btn-secondary mt-4">Voir tout le catalogue</a>
+  </div>
+{% endif %}
+
+<div
+  x-cloak
+  x-show="$store.cart.count > 0"
+  class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_30px_-18px_rgba(15,23,42,.35)] backdrop-blur lg:hidden"
+>
+  <div class="mx-auto flex max-w-7xl items-center gap-3">
+    <div class="min-w-0 flex-1">
+      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Panier</p>
+      <p class="text-sm font-extrabold tabular-nums text-navy-900" x-text="money($store.cart.total)"></p>
+    </div>
+    <button type="button" class="btn-primary h-10" @click="$store.cart.openDrawer()">
+      <svg class="icon-sm h-4 w-4"><use href="#i-cart"></use></svg>
+      Voir le panier (<span x-text="$store.cart.count"></span>)
+    </button>
+  </div>
+</div>
+<div class="h-16 lg:hidden" x-show="$store.cart.count > 0" x-cloak></div>
+{% endblock %}

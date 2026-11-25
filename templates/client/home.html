@@ -1,0 +1,197 @@
+{% extends "client/base.html" %}
+{% load static dpci %}
+
+{% block title %}Accueil — Espace client DPCI{% endblock %}
+
+{% block content %}
+<section class="relative overflow-hidden rounded-2xl bg-navy-900 px-5 py-7 text-white shadow-panel sm:px-8 sm:py-9">
+  <div class="pointer-events-none absolute inset-0">
+    <div class="absolute inset-0 bg-grid-dark opacity-60"></div>
+    <div class="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-brand-500/25 blur-3xl"></div>
+    <div class="absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl"></div>
+  </div>
+
+  <div class="relative grid gap-6 lg:grid-cols-[1.35fr_1fr] lg:items-center">
+    <div>
+      <p class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+        Espace client · {{ account.city }}
+      </p>
+      <h1 class="mt-2 text-2xl font-extrabold leading-tight tracking-tight sm:text-[32px]">Bonjour, {{ client_name }}</h1>
+      <p class="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+        Composez votre commande à partir du catalogue et suivez chaque étape, de la préparation à la livraison.
+      </p>
+      <div class="mt-5 flex flex-wrap gap-2">
+        <a href="{% url 'client_catalogue' %}" class="btn h-10 bg-white px-4 text-navy-900 hover:bg-brand-50">
+          <svg class="icon-sm h-4 w-4 text-brand-700"><use href="#i-grid"></use></svg>
+          Parcourir le catalogue
+        </a>
+        <a href="{% url 'client_orders' %}" class="btn h-10 border border-white/15 bg-white/5 px-4 text-white hover:bg-white/10">
+          <svg class="icon-sm h-4 w-4"><use href="#i-receipt"></use></svg>
+          Suivre mes commandes
+        </a>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur">
+      {% if summary.next %}
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Commande en cours</p>
+          <span class="badge {{ summary.next.status_meta.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ summary.next.status_meta.dot }}"></span>{{ summary.next.status_meta.label }}</span>
+        </div>
+        <p class="mt-2 text-lg font-extrabold tracking-tight">{{ summary.next.reference }}</p>
+        <p class="mt-0.5 text-[11px] text-slate-500">{{ summary.next.date }} · {{ summary.next.units }} unités · {{ summary.next.amount|fcfa }}</p>
+        <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div class="h-full rounded-full {{ summary.next.status_meta.bar }}" style="width: {{ summary.next.progress }}%"></div>
+        </div>
+        <a href="{% url 'client_order_detail' summary.next.reference %}" class="mt-3 flex items-center justify-between gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/[0.14]">
+          Voir le suivi détaillé
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-arrow-right"></use></svg>
+        </a>
+      {% else %}
+        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Aucune commande en cours</p>
+        <p class="mt-2 text-sm font-semibold leading-6 text-slate-200">Toutes vos commandes sont livrées. Préparez votre prochain réapprovisionnement.</p>
+        <a href="{% url 'client_catalogue' %}" class="mt-3 flex items-center justify-between gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/[0.14]">
+          Créer une commande
+          <svg class="icon-sm h-3.5 w-3.5"><use href="#i-arrow-right"></use></svg>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <div class="card p-4">
+    <div class="flex items-center justify-between">
+      <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">En cours</p>
+      <span class="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600"><svg class="icon-sm h-3.5 w-3.5"><use href="#i-clock"></use></svg></span>
+    </div>
+    <p class="mt-2 text-2xl font-extrabold tabular-nums tracking-tight text-navy-900">{{ summary.active_count }}</p>
+    <p class="text-[11px] text-slate-500">commandes actives</p>
+  </div>
+  <div class="card p-4">
+    <div class="flex items-center justify-between">
+      <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Livrées</p>
+      <span class="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><svg class="icon-sm h-3.5 w-3.5"><use href="#i-package-check"></use></svg></span>
+    </div>
+    <p class="mt-2 text-2xl font-extrabold tabular-nums tracking-tight text-navy-900">{{ summary.delivered_count }}</p>
+    <p class="text-[11px] text-slate-500">commandes reçues</p>
+  </div>
+  <div class="card p-4">
+    <div class="flex items-center justify-between">
+      <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Cumul</p>
+      <span class="grid h-7 w-7 place-items-center rounded-lg bg-sky-50 text-sky-600"><svg class="icon-sm h-3.5 w-3.5"><use href="#i-wallet"></use></svg></span>
+    </div>
+    <p class="mt-2 truncate text-2xl font-extrabold tabular-nums tracking-tight text-navy-900">{{ summary.total|fcfa }}</p>
+    <p class="text-[11px] text-slate-500">montant commandé</p>
+  </div>
+  <div class="card p-4">
+    <div class="flex items-center justify-between">
+      <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Catalogue</p>
+      <span class="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-700"><svg class="icon-sm h-3.5 w-3.5"><use href="#i-pill"></use></svg></span>
+    </div>
+    <p class="mt-2 text-2xl font-extrabold tabular-nums tracking-tight text-navy-900">{{ catalog_count }}</p>
+    <p class="text-[11px] text-slate-500">références · {{ category_count }} catégories</p>
+  </div>
+</section>
+
+<div class="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+  <section class="card overflow-hidden">
+    <div class="flex items-center justify-between gap-3 border-b border-hairline px-4 py-3.5 sm:px-5">
+      <div>
+        <h2 class="text-sm font-extrabold tracking-tight text-navy-900">Vos dernières commandes</h2>
+        <p class="mt-0.5 text-[11px] text-slate-500">Historique récent et statut de préparation</p>
+      </div>
+      <a href="{% url 'client_orders' %}" class="btn-ghost h-8 px-2.5 text-[11px] text-brand-700 hover:bg-brand-50">Tout voir
+        <svg class="icon-sm h-3.5 w-3.5"><use href="#i-arrow-right"></use></svg>
+      </a>
+    </div>
+
+    {% if summary.recent %}
+      <ul class="divide-y divide-slate-100">
+        {% for order in summary.recent %}
+          <li>
+            <a href="{% url 'client_order_detail' order.reference %}" class="group flex flex-col gap-2 px-4 py-3 transition hover:bg-slate-50/80 sm:flex-row sm:items-center sm:gap-4 sm:px-5">
+              <div class="flex min-w-0 flex-1 items-center gap-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500"><svg class="icon-sm h-4 w-4"><use href="#i-receipt"></use></svg></span>
+                <div class="min-w-0">
+                  <p class="truncate text-[13px] font-bold text-navy-900">{{ order.reference }}</p>
+                  <p class="truncate text-[11px] text-slate-500">{{ order.date }} · {{ order.lines }} ligne{{ order.lines|pluralize }} · {{ order.units }} unités</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 pl-12 sm:pl-0">
+                <span class="badge {{ order.status_meta.badge }}"><span class="h-1.5 w-1.5 rounded-full {{ order.status_meta.dot }}"></span>{{ order.status_meta.label }}</span>
+                <p class="ml-auto w-24 text-right text-[13px] font-bold tabular-nums text-navy-900">{{ order.amount|fcfa }}</p>
+                <svg class="icon-sm hidden h-3.5 w-3.5 text-slate-300 transition group-hover:text-brand-700 sm:block"><use href="#i-chevron-right"></use></svg>
+              </div>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="px-5 py-10 text-center">
+        <p class="text-sm font-semibold text-navy-900">Aucune commande pour le moment</p>
+        <p class="mt-1 text-xs text-slate-500">Votre historique apparaîtra ici dès votre première commande.</p>
+        <a href="{% url 'client_catalogue' %}" class="btn-primary mt-4">Passer commande</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <aside class="card p-4 sm:p-5">
+    <div class="flex items-center gap-2.5">
+      <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-700 text-[11px] font-bold text-white">{{ user.initials }}</span>
+      <div class="min-w-0">
+        <p class="truncate text-sm font-extrabold text-navy-900">{{ client_name }}</p>
+        <p class="truncate text-[11px] text-slate-500">{{ account.role }}</p>
+      </div>
+    </div>
+    <dl class="mt-4 space-y-3 text-[12px]">
+      <div class="flex gap-2.5">
+        <svg class="icon-sm mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500"><use href="#i-user"></use></svg>
+        <div><dt class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Contact</dt><dd class="font-semibold text-slate-700">{{ account.contact }}</dd></div>
+      </div>
+      <div class="flex gap-2.5">
+        <svg class="icon-sm mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500"><use href="#i-phone"></use></svg>
+        <div><dt class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Téléphone</dt><dd class="font-semibold tabular-nums text-slate-700">{{ account.phone }}</dd></div>
+      </div>
+      <div class="flex gap-2.5">
+        <svg class="icon-sm mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500"><use href="#i-map-pin"></use></svg>
+        <div><dt class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Adresse de livraison</dt><dd class="font-semibold leading-5 text-slate-700">{{ account.address }}</dd></div>
+      </div>
+      <div class="flex gap-2.5">
+        <svg class="icon-sm mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500"><use href="#i-credit-card"></use></svg>
+        <div><dt class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Règlement</dt><dd class="font-semibold text-slate-700">{{ account.payment }}</dd></div>
+      </div>
+    </dl>
+    <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-600">
+      Votre interlocuteur : <span class="font-bold text-navy-900">Awa Konan</span>, responsable commerciale.
+    </div>
+  </aside>
+</div>
+
+<section class="mt-6">
+  <div class="flex items-end justify-between gap-3">
+    <div>
+      <h2 class="text-sm font-extrabold tracking-tight text-navy-900">Produits à commander</h2>
+      <p class="mt-0.5 text-[11px] text-slate-500">Sélection de références disponibles en stock</p>
+    </div>
+    <a href="{% url 'client_catalogue' %}" class="btn-ghost h-8 px-2.5 text-[11px] text-brand-700 hover:bg-brand-50">Catalogue complet
+      <svg class="icon-sm h-3.5 w-3.5"><use href="#i-arrow-right"></use></svg>
+    </a>
+  </div>
+  <div class="mt-3 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    {% for product in featured %}
+      {% include "client/_product_card.html" with product=product %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mt-6">
+  <h2 class="text-sm font-extrabold tracking-tight text-navy-900">Rayons</h2>
+  <div class="mt-2.5 flex flex-wrap gap-1.5">
+    {% for category in categories %}
+      <a href="{% url 'client_catalogue' %}?categorie={{ category|urlencode }}" class="client-chip">{{ category }}</a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
